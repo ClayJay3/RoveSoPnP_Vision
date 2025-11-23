@@ -1,0 +1,329 @@
+/******************************************************************************
+ * @brief Sets up functions and classes used by logging project wide.
+ *
+ * @file AutonomyLogging.cpp
+ * @author Eli Byrd (edbgkk@mst.edu), ClayJay3 (claytonraycowen@gmail.com)
+ * @date 2025-10-18
+ *
+ * @copyright Copyright RoveSoSeniorDesign 2025 - All Rights Reserved
+ ******************************************************************************/
+
+#include "Logging.h"
+
+/// \cond
+#include <chrono>
+#include <ctime>
+#include <filesystem>
+#include <iostream>
+
+/// \endcond
+
+/******************************************************************************
+ * @brief Namespace containing all global type/structs that will be used project wide
+ *      for logging.
+ *
+ *
+ * @author clayjay3 (claytonraycowen@gmail.com)
+ * @date 2025-09-30
+ ******************************************************************************/
+namespace logging
+{
+    /////////////////////////////////////////
+    // Forward declarations for namespace variables and objects.
+    /////////////////////////////////////////
+    quill::Logger *g_qFileLogger;
+    quill::Logger *g_qConsoleLogger;
+    quill::Logger *g_qSharedLogger;
+
+    quill::LogLevel g_eConsoleLogLevel;
+    quill::LogLevel g_eFileLogLevel;
+
+    std::string g_szProgramStartTimeString;
+    std::string g_szLoggingOutputPath;
+
+    /******************************************************************************
+     * @brief Logger Initializer - Sets Up all the logging handlers required for
+     *        having the above loggers.
+     *
+     * @param szLoggingOutputPath - A string containing the filepath to output log files to.
+     *                      Must be properly formatted.
+     *
+     * @author Eli Byrd (edbgkk@mst.edu)
+     * @date 2025-08-22
+     ******************************************************************************/
+    void InitializeLoggers(std::string szLoggingOutputPath, std::string szProgramTimeLogsDir)
+    {
+        // Store start time string in member variable.
+        g_szProgramStartTimeString = szProgramTimeLogsDir;
+
+        // Assemble filepath string.
+        std::filesystem::path szFilePath;
+        std::filesystem::path szFilename;
+        szFilePath = szLoggingOutputPath;               // Main location for all recordings.
+        szFilePath += g_szProgramStartTimeString + "/"; // Folder for each program run.
+        szFilename = "console_output";                  // Base file name.
+
+        // Store the logging output path.
+        g_szLoggingOutputPath = szFilePath;
+
+        // Check if directory exists.
+        if (!std::filesystem::exists(szFilePath))
+        {
+            // Create directory.
+            if (!std::filesystem::create_directories(szFilePath))
+            {
+                // Submit logger message.
+                std::cerr << "Unable to create the logging output directory: " << szFilePath.string() << " for console output file." << std::endl;
+            }
+        }
+        else
+        {
+            // Submit logger message.
+            std::cerr << "Unable to create logging output directory " << szFilePath.string() << ": it already exists." << std::endl;
+        }
+
+        // Construct the full output path.
+        std::filesystem::path szFullOutputPath = szFilePath / szFilename;
+
+        // Set Console Color Profile
+        quill::ConsoleSinkConfig::Colours qColors;
+        qColors.apply_default_colours();
+        qColors.assign_colour_to_log_level(quill::LogLevel::TraceL3, constants::szTraceL3Color);
+        qColors.assign_colour_to_log_level(quill::LogLevel::TraceL2, constants::szTraceL2Color);
+        qColors.assign_colour_to_log_level(quill::LogLevel::TraceL1, constants::szTraceL1Color);
+        qColors.assign_colour_to_log_level(quill::LogLevel::Debug, constants::szDebugColor);
+        qColors.assign_colour_to_log_level(quill::LogLevel::Info, constants::szInfoColor);
+        qColors.assign_colour_to_log_level(quill::LogLevel::Warning, constants::szWarningColor);
+        qColors.assign_colour_to_log_level(quill::LogLevel::Error, constants::szErrorColor);
+        qColors.assign_colour_to_log_level(quill::LogLevel::Critical, constants::szCriticalColor);
+        qColors.assign_colour_to_log_level(quill::LogLevel::Backtrace, constants::szBacktraceColor);
+
+        // Create Patterns
+        std::string szLogFilePattern = "%(time) %(log_level) [%(thread_id)] [%(file_name):%(line_number)] %(message)";
+        std::string szCSVFilePattern = "%(time),\t%(log_level),\t[%(thread_id)],\t[%(file_name):%(line_number)],\t\"%(message)\"";
+        std::string szConsolePattern = "%(time) %(log_level:9) [%(thread_id)] [%(file_name):%(line_number)] %(message)";
+        std::string szRoveCommPattern = "%(time) %(log_level) [%(thread_id)] [%(file_name):%(line_number)] %(message)";
+        std::string szTimestampPattern = "%Y-%m-%d %H:%M:%S.%Qms";
+
+        // Create Sinks
+        std::shared_ptr<quill::Sink> qLogFileSink = quill::Frontend::create_or_get_sink<MRDTRotatingFileSink>(
+            szFullOutputPath.replace_extension(".log"), // Log Output Path
+            []()
+            {
+                quill::RotatingFileSinkConfig cfg;
+                cfg.set_open_mode('a');
+                return cfg; // Rotating File Sink Configs
+            }(),
+            szLogFilePattern,          // Log Output Pattern
+            szTimestampPattern,        // Log Timestamp Pattern
+            quill::Timezone::LocalTime // Log Timezone
+        );
+
+        std::shared_ptr<quill::Sink> qCSVFileSink = quill::Frontend::create_or_get_sink<MRDTRotatingFileSink>(
+            szFullOutputPath.replace_extension(".csv"), // Log Output Path
+            []()
+            {
+                quill::RotatingFileSinkConfig cfg;
+                cfg.set_open_mode('a');
+                return cfg; // Rotating File Sink Configs
+            }(),
+            szCSVFilePattern,          // Log Output Pattern
+            szTimestampPattern,        // Log Timestamp Pattern
+            quill::Timezone::LocalTime // Log Timezone
+        );
+
+        std::shared_ptr<quill::Sink> qConsoleSink =
+            quill::Frontend::create_or_get_sink<MRDTConsoleSink>("ConsoleSink",                                   // Log Name
+                                                                 qColors,                                         // Log Custom Colors
+                                                                 quill::ConsoleSinkConfig::ColourMode::Automatic, // Detect is console supports colors.
+                                                                 szConsolePattern,                                // Log Output Pattern
+                                                                 szTimestampPattern                               // Log Timestamp Pattern
+            );
+
+        // Configure Quill
+        quill::BackendOptions qBackendConfig;
+
+        // Start Quill
+        quill::Backend::start(qBackendConfig);
+
+        // Create Loggers
+        g_qFileLogger = quill::Frontend::create_or_get_logger("FILE_LOGGER", {qLogFileSink, qCSVFileSink});
+        g_qConsoleLogger = quill::Frontend::create_or_get_logger("CONSOLE_LOGGER", {qConsoleSink});
+        g_qSharedLogger = quill::Frontend::create_or_get_logger("SHARED_LOGGER", {qLogFileSink, qCSVFileSink, qConsoleSink});
+
+        // Set Internal Logging Level Limiters
+        g_eFileLogLevel = constants::FILE_DEFAULT_LEVEL;
+        g_eConsoleLogLevel = constants::CONSOLE_DEFAULT_LEVEL;
+
+        // Set Base Logging Levels
+        g_qFileLogger->set_log_level(quill::LogLevel::TraceL3);
+        g_qConsoleLogger->set_log_level(quill::LogLevel::TraceL3);
+        g_qSharedLogger->set_log_level(quill::LogLevel::TraceL3);
+
+        // Enable Backtrace
+        g_qFileLogger->init_backtrace(10, quill::LogLevel::Critical);
+        g_qConsoleLogger->init_backtrace(10, quill::LogLevel::Critical);
+        g_qSharedLogger->init_backtrace(10, quill::LogLevel::Critical);
+    }
+
+    /******************************************************************************
+     * @brief Writes a log message to the MRDT console sink, formats the message
+     * using the provided formatter, and then passes the formatted log message
+     * along with the original data to the parent class (ConsoleSink) for handling.
+     *
+     * @param qLogMetadata - Metadata about the log statement (e.g., file, line number).
+     * @param unLogTimestamp - The timestamp of the log statement.
+     * @param szThreadID - The ID of the thread that generated the log.
+     * @param szThreadName - The name of the thread that generated the log.
+     * @param szProcessID - The ID of the process that generated the log.
+     * @param szLoggerName - The name of the logger that generated the log.
+     * @param qLogLevel - The level/severity of the log statement.
+     * @param szLogLevelDescription - A description of the log level.
+     * @param szLogLevelShortCode - A short code representing the log level.
+     * @param vNamedArgs - Optional named arguments passed with the log statement.
+     * @param szLogMessage - The actual log message content.
+     *
+     * @note This method calls the base class's `write_log` function to actually
+     * handle the log output, after formatting the message with custom formatting logic.
+     *
+     * @note This method should not be called directly. It is meant to be invoked
+     * by the logging framework as part of the log handling process.
+     *
+     * @see quill::ConsoleSink
+     *
+     * @warning Ensure that the formatter is correctly configured before using this
+     * method, as improper formatting may lead to incorrect log outputs.
+     *
+     * @attention This method overrides the base class's write_log function to
+     * inject custom formatting logic while preserving the core file logging functionality.
+     *
+     * @author Eli Byrd (edbgkk@mst.edu)
+     * @date 2025-08-16
+     ******************************************************************************/
+    void MRDTConsoleSink::write_log(quill::MacroMetadata const *qLogMetadata,
+                                    uint64_t unLogTimestamp,
+                                    std::string_view szThreadID,
+                                    std::string_view szThreadName,
+                                    const std::string &szProcessID,
+                                    std::string_view szLoggerName,
+                                    quill::LogLevel qLogLevel,
+                                    std::string_view szLogLevelDescription,
+                                    std::string_view szLogLevelShortCode,
+                                    const std::vector<std::pair<std::string, std::string>> *vNamedArgs,
+                                    std::string_view szLogMessage,
+                                    std::string_view)
+    {
+        // Format the log message
+        std::string_view szFormattedLogMessage = qFormatter.format(unLogTimestamp,        // Timestamp
+                                                                   szThreadID,            // Thread ID
+                                                                   szThreadName,          // Thread name
+                                                                   szProcessID,           // Process ID
+                                                                   szLoggerName,          // Logger name
+                                                                   szLogLevelDescription, // Log level description
+                                                                   szLogLevelShortCode,   // Log level short code
+                                                                   *qLogMetadata,         // Log statement metadata
+                                                                   vNamedArgs,            // Named arguments
+                                                                   szLogMessage           // Log message
+        );
+
+        // Check if logging level is permitted
+        if (static_cast<int>(g_eConsoleLogLevel) <= static_cast<int>(qLogLevel))
+        {
+            quill::ConsoleSink::write_log(qLogMetadata,          // Metadata
+                                          unLogTimestamp,        // Timestamp
+                                          szThreadID,            // Thread ID
+                                          szThreadName,          // Thread Name
+                                          szProcessID,           // Process ID
+                                          szLoggerName,          // Logger name
+                                          qLogLevel,             // Log level
+                                          szLogLevelDescription, // Log level description
+                                          szLogLevelShortCode,   // Log level short code
+                                          vNamedArgs,            // Named arguments
+                                          szLogMessage,          // Log Message
+                                          szFormattedLogMessage  // Formatted Log Message
+            );
+        }
+    }
+
+    /******************************************************************************
+     * @brief Writes a log message to the MRDT rotating file sink. The log message
+     * is first formatted using a custom formatter, and then the formatted message
+     * along with the original log details are passed to the base class
+     * (RotatingFileSink) for further handling (such as writing to a rotating log file).
+     *
+     * @param qLogMetadata - Metadata about the log statement (e.g., file, line number).
+     * @param unLogTimestamp - The timestamp of the log statement.
+     * @param szThreadID - The ID of the thread that generated the log.
+     * @param szThreadName - The name of the thread that generated the log.
+     * @param szProcessID - The ID of the process that generated the log.
+     * @param szLoggerName - The name of the logger that generated the log.
+     * @param qLogLevel - The level/severity of the log statement.
+     * @param szLogLevelDescription - A description of the log level.
+     * @param szLogLevelShortCode - A short code representing the log level.
+     * @param vNamedArgs - Optional named arguments passed with the log statement.
+     * @param szLogMessage - The actual log message content.
+     *
+     * @note This method formats the log message using the provided formatter,
+     * ensuring that the final output adheres to the defined format pattern. The
+     * formatted message is then handled by the rotating file sink for writing to
+     * a file that rotates based on file size or time interval.
+     *
+     * @note This method should not be called directly. It is meant to be invoked
+     * by the logging framework as part of the log handling process.
+     *
+     * @see quill::RotatingFileSink
+     *
+     * @warning Ensure that the formatter is correctly configured and that the
+     * rotating file sink is properly set up to avoid loss of log data.
+     *
+     * @attention This method overrides the base class's write_log function to
+     * inject custom formatting logic while preserving the core file logging functionality.
+     *
+     * @author Eli Byrd (edbgkk@mst.edu)
+     * @date 2025-08-16
+     ******************************************************************************/
+    void MRDTRotatingFileSink::write_log(const quill::MacroMetadata *qLogMetadata,
+                                         uint64_t unLogTimestamp,
+                                         std::string_view szThreadID,
+                                         std::string_view szThreadName,
+                                         const std::string &szProcessID,
+                                         std::string_view szLoggerName,
+                                         quill::LogLevel qLogLevel,
+                                         std::string_view szLogLevelDescription,
+                                         std::string_view szLogLevelShortCode,
+                                         const std::vector<std::pair<std::string, std::string>> *vNamedArgs,
+                                         std::string_view szLogMessage,
+                                         std::string_view)
+    {
+        // Format the log message
+        std::string_view szFormattedLogMessage = qFormatter.format(unLogTimestamp,        // Timestamp
+                                                                   szThreadID,            // Thread ID
+                                                                   szThreadName,          // Thread name
+                                                                   szProcessID,           // Process ID
+                                                                   szLoggerName,          // Logger name
+                                                                   szLogLevelDescription, // Log level description
+                                                                   szLogLevelShortCode,   // Log level short code
+                                                                   *qLogMetadata,         // Log statement metadata
+                                                                   vNamedArgs,            // Named arguments
+                                                                   szLogMessage           // Log message
+        );
+
+        // Check if logging level is permitted
+        if (static_cast<int>(g_eFileLogLevel) <= static_cast<int>(qLogLevel))
+        {
+            quill::RotatingFileSink::write_log(qLogMetadata,          // Metadata
+                                               unLogTimestamp,        // Timestamp
+                                               szThreadID,            // Thread ID
+                                               szThreadName,          // Thread Name
+                                               szProcessID,           // Process ID
+                                               szLoggerName,          // Logger name
+                                               qLogLevel,             // Log level
+                                               szLogLevelDescription, // Log level description
+                                               szLogLevelShortCode,   // Log level short code
+                                               vNamedArgs,            // Named arguments
+                                               szLogMessage,          // Log Message
+                                               szFormattedLogMessage  // Formatted Log Message
+            );
+        }
+    }
+} // namespace logging

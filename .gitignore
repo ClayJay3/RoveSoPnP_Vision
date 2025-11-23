@@ -7,6 +7,11 @@
 *.o
 *.obj
 
+# Build directories
+build/
+# Log directories
+logs/
+
 # Precompiled Headers
 *.gch
 *.pch
