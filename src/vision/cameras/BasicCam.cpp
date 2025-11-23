@@ -36,15 +36,16 @@ BasicCam::BasicCam(const std::string szCameraPath,
                    const double dPropHorizontalFOV,
                    const double dPropVerticalFOV,
                    const bool bEnableRecordingFlag,
-                   const int nNumFrameRetrievalThreads) : BasicCamera(szCameraPath,
-                                                                      nPropResolutionX,
-                                                                      nPropResolutionY,
-                                                                      nPropFramesPerSecond,
-                                                                      ePropPixelFormat,
-                                                                      dPropHorizontalFOV,
-                                                                      dPropVerticalFOV,
-                                                                      bEnableRecordingFlag,
-                                                                      nNumFrameRetrievalThreads)
+                   const int nNumFrameRetrievalThreads) :
+    BasicCamera(szCameraPath,
+                nPropResolutionX,
+                nPropResolutionY,
+                nPropFramesPerSecond,
+                ePropPixelFormat,
+                dPropHorizontalFOV,
+                dPropVerticalFOV,
+                bEnableRecordingFlag,
+                nNumFrameRetrievalThreads)
 {
     // Initialize the OpenCV mat to a black/empty image the size of the camera resolution.
     m_cvFrame = cv::Mat::zeros(nPropResolutionY, nPropResolutionX, CV_8UC4);
@@ -95,15 +96,16 @@ BasicCam::BasicCam(const int nCameraIndex,
                    const double dPropHorizontalFOV,
                    const double dPropVerticalFOV,
                    const bool bEnableRecordingFlag,
-                   const int nNumFrameRetrievalThreads) : BasicCamera(nCameraIndex,
-                                                                      nPropResolutionX,
-                                                                      nPropResolutionY,
-                                                                      nPropFramesPerSecond,
-                                                                      ePropPixelFormat,
-                                                                      dPropHorizontalFOV,
-                                                                      dPropVerticalFOV,
-                                                                      bEnableRecordingFlag,
-                                                                      nNumFrameRetrievalThreads)
+                   const int nNumFrameRetrievalThreads) :
+    BasicCamera(nCameraIndex,
+                nPropResolutionX,
+                nPropResolutionY,
+                nPropFramesPerSecond,
+                ePropPixelFormat,
+                dPropHorizontalFOV,
+                dPropVerticalFOV,
+                bEnableRecordingFlag,
+                nNumFrameRetrievalThreads)
 {
     // Initialize the OpenCV mat to a black/empty image the size of the camera resolution.
     m_cvFrame = cv::Mat::zeros(nPropResolutionY, nPropResolutionX, CV_8UC4);
@@ -189,8 +191,8 @@ void BasicCam::ThreadedContinuousCode()
         else
         {
             // Create instance variables.
-            bool bCameraReopened = false;
-            static bool bReopenAlreadyChecked = false;
+            bool bCameraReopened                  = false;
+            static bool bReopenAlreadyChecked     = false;
             std::chrono::time_point tmCurrentTime = std::chrono::system_clock::now();
             // Convert time point to seconds since epoch
             int nTimeSinceEpoch = std::chrono::duration_cast<std::chrono::seconds>(tmCurrentTime.time_since_epoch()).count();
@@ -314,7 +316,7 @@ void BasicCam::PooledLinearCode()
  * @author ClayJay3 (claytonraycowen@gmail.com)
  * @date 2025-09-09
  ******************************************************************************/
-std::future<bool> BasicCam::RequestFrameCopy(cv::Mat &cvFrame)
+std::future<bool> BasicCam::RequestFrameCopy(cv::Mat& cvFrame)
 {
     // Assemble the FrameFetchContainer.
     containers::FrameFetchContainer<cv::Mat> stContainer(cvFrame, m_ePropPixelFormat);

@@ -87,6 +87,6 @@ namespace constants
     extern const int GANTRYCAM_INDEX;
     extern const PIXEL_FORMATS GANTRYCAM_PIXELTYPE;
     ///////////////////////////////////////////////////////////////////////////
-} // namespace constants
+}    // namespace constants
 
-#endif // AUTONOMY_CONSTANTS_H
+#endif    // AUTONOMY_CONSTANTS_H

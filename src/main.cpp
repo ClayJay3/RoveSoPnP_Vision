@@ -118,7 +118,7 @@ int main()
     // Setup signal interrupt handler.
     struct sigaction stSigBreak;
     stSigBreak.sa_handler = SignalHandler;
-    stSigBreak.sa_flags = 0;
+    stSigBreak.sa_flags   = 0;
     sigemptyset(&stSigBreak.sa_mask);
     sigaction(SIGINT, &stSigBreak, nullptr);
     sigaction(SIGQUIT, &stSigBreak, nullptr);
@@ -130,6 +130,8 @@ int main()
     /////////////////////////////////////////
     // Get Camera and Tag detector pointers .
     IPS IterPerSecond = IPS();
+
+    // Declare and initialize cameras.
 
     // Create a vector of ints to store the FPS values for each thread.
     std::vector<uint32_t> vThreadFPSValues;
@@ -157,7 +159,7 @@ int main()
         if (CheckKeyPress() > 0)
         {
             char chTerminalInput = 0;
-            ssize_t nBytesRead = read(STDIN_FILENO, &chTerminalInput, 1);
+            ssize_t nBytesRead   = read(STDIN_FILENO, &chTerminalInput, 1);
             if (nBytesRead <= 0)
             {
                 LOG_WARNING(logging::g_qSharedLogger, "Failed to read from terminal input.");

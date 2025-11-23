@@ -60,7 +60,7 @@ RUN apt-get update && apt-get install --no-install-recommends -y \
     nlohmann-json3-dev \
     libeigen3-dev \
     tzdata \
-    openssh && \
+    ssh && \
     rm -rf /var/lib/apt/lists/*
 
 # Set Timezone

@@ -31,9 +31,9 @@ namespace logging
     /////////////////////////////////////////
     // Forward declarations for namespace variables and objects.
     /////////////////////////////////////////
-    quill::Logger *g_qFileLogger;
-    quill::Logger *g_qConsoleLogger;
-    quill::Logger *g_qSharedLogger;
+    quill::Logger* g_qFileLogger;
+    quill::Logger* g_qConsoleLogger;
+    quill::Logger* g_qSharedLogger;
 
     quill::LogLevel g_eConsoleLogLevel;
     quill::LogLevel g_eFileLogLevel;
@@ -59,9 +59,9 @@ namespace logging
         // Assemble filepath string.
         std::filesystem::path szFilePath;
         std::filesystem::path szFilename;
-        szFilePath = szLoggingOutputPath;               // Main location for all recordings.
-        szFilePath += g_szProgramStartTimeString + "/"; // Folder for each program run.
-        szFilename = "console_output";                  // Base file name.
+        szFilePath = szLoggingOutputPath;                  // Main location for all recordings.
+        szFilePath += g_szProgramStartTimeString + "/";    // Folder for each program run.
+        szFilename = "console_output";                     // Base file name.
 
         // Store the logging output path.
         g_szLoggingOutputPath = szFilePath;
@@ -99,45 +99,45 @@ namespace logging
         qColors.assign_colour_to_log_level(quill::LogLevel::Backtrace, constants::szBacktraceColor);
 
         // Create Patterns
-        std::string szLogFilePattern = "%(time) %(log_level) [%(thread_id)] [%(file_name):%(line_number)] %(message)";
-        std::string szCSVFilePattern = "%(time),\t%(log_level),\t[%(thread_id)],\t[%(file_name):%(line_number)],\t\"%(message)\"";
-        std::string szConsolePattern = "%(time) %(log_level:9) [%(thread_id)] [%(file_name):%(line_number)] %(message)";
-        std::string szRoveCommPattern = "%(time) %(log_level) [%(thread_id)] [%(file_name):%(line_number)] %(message)";
+        std::string szLogFilePattern   = "%(time) %(log_level) [%(thread_id)] [%(file_name):%(line_number)] %(message)";
+        std::string szCSVFilePattern   = "%(time),\t%(log_level),\t[%(thread_id)],\t[%(file_name):%(line_number)],\t\"%(message)\"";
+        std::string szConsolePattern   = "%(time) %(log_level:9) [%(thread_id)] [%(file_name):%(line_number)] %(message)";
+        std::string szRoveCommPattern  = "%(time) %(log_level) [%(thread_id)] [%(file_name):%(line_number)] %(message)";
         std::string szTimestampPattern = "%Y-%m-%d %H:%M:%S.%Qms";
 
         // Create Sinks
         std::shared_ptr<quill::Sink> qLogFileSink = quill::Frontend::create_or_get_sink<MRDTRotatingFileSink>(
-            szFullOutputPath.replace_extension(".log"), // Log Output Path
+            szFullOutputPath.replace_extension(".log"),    // Log Output Path
             []()
             {
                 quill::RotatingFileSinkConfig cfg;
                 cfg.set_open_mode('a');
-                return cfg; // Rotating File Sink Configs
+                return cfg;               // Rotating File Sink Configs
             }(),
-            szLogFilePattern,          // Log Output Pattern
-            szTimestampPattern,        // Log Timestamp Pattern
-            quill::Timezone::LocalTime // Log Timezone
+            szLogFilePattern,             // Log Output Pattern
+            szTimestampPattern,           // Log Timestamp Pattern
+            quill::Timezone::LocalTime    // Log Timezone
         );
 
         std::shared_ptr<quill::Sink> qCSVFileSink = quill::Frontend::create_or_get_sink<MRDTRotatingFileSink>(
-            szFullOutputPath.replace_extension(".csv"), // Log Output Path
+            szFullOutputPath.replace_extension(".csv"),    // Log Output Path
             []()
             {
                 quill::RotatingFileSinkConfig cfg;
                 cfg.set_open_mode('a');
-                return cfg; // Rotating File Sink Configs
+                return cfg;               // Rotating File Sink Configs
             }(),
-            szCSVFilePattern,          // Log Output Pattern
-            szTimestampPattern,        // Log Timestamp Pattern
-            quill::Timezone::LocalTime // Log Timezone
+            szCSVFilePattern,             // Log Output Pattern
+            szTimestampPattern,           // Log Timestamp Pattern
+            quill::Timezone::LocalTime    // Log Timezone
         );
 
         std::shared_ptr<quill::Sink> qConsoleSink =
-            quill::Frontend::create_or_get_sink<MRDTConsoleSink>("ConsoleSink",                                   // Log Name
-                                                                 qColors,                                         // Log Custom Colors
-                                                                 quill::ConsoleSinkConfig::ColourMode::Automatic, // Detect is console supports colors.
-                                                                 szConsolePattern,                                // Log Output Pattern
-                                                                 szTimestampPattern                               // Log Timestamp Pattern
+            quill::Frontend::create_or_get_sink<MRDTConsoleSink>("ConsoleSink",                                      // Log Name
+                                                                 qColors,                                            // Log Custom Colors
+                                                                 quill::ConsoleSinkConfig::ColourMode::Automatic,    // Detect is console supports colors.
+                                                                 szConsolePattern,                                   // Log Output Pattern
+                                                                 szTimestampPattern                                  // Log Timestamp Pattern
             );
 
         // Configure Quill
@@ -147,12 +147,12 @@ namespace logging
         quill::Backend::start(qBackendConfig);
 
         // Create Loggers
-        g_qFileLogger = quill::Frontend::create_or_get_logger("FILE_LOGGER", {qLogFileSink, qCSVFileSink});
+        g_qFileLogger    = quill::Frontend::create_or_get_logger("FILE_LOGGER", {qLogFileSink, qCSVFileSink});
         g_qConsoleLogger = quill::Frontend::create_or_get_logger("CONSOLE_LOGGER", {qConsoleSink});
-        g_qSharedLogger = quill::Frontend::create_or_get_logger("SHARED_LOGGER", {qLogFileSink, qCSVFileSink, qConsoleSink});
+        g_qSharedLogger  = quill::Frontend::create_or_get_logger("SHARED_LOGGER", {qLogFileSink, qCSVFileSink, qConsoleSink});
 
         // Set Internal Logging Level Limiters
-        g_eFileLogLevel = constants::FILE_DEFAULT_LEVEL;
+        g_eFileLogLevel    = constants::FILE_DEFAULT_LEVEL;
         g_eConsoleLogLevel = constants::CONSOLE_DEFAULT_LEVEL;
 
         // Set Base Logging Levels
@@ -200,47 +200,47 @@ namespace logging
      * @author Eli Byrd (edbgkk@mst.edu)
      * @date 2025-08-16
      ******************************************************************************/
-    void MRDTConsoleSink::write_log(quill::MacroMetadata const *qLogMetadata,
+    void MRDTConsoleSink::write_log(quill::MacroMetadata const* qLogMetadata,
                                     uint64_t unLogTimestamp,
                                     std::string_view szThreadID,
                                     std::string_view szThreadName,
-                                    const std::string &szProcessID,
+                                    const std::string& szProcessID,
                                     std::string_view szLoggerName,
                                     quill::LogLevel qLogLevel,
                                     std::string_view szLogLevelDescription,
                                     std::string_view szLogLevelShortCode,
-                                    const std::vector<std::pair<std::string, std::string>> *vNamedArgs,
+                                    const std::vector<std::pair<std::string, std::string>>* vNamedArgs,
                                     std::string_view szLogMessage,
                                     std::string_view)
     {
         // Format the log message
-        std::string_view szFormattedLogMessage = qFormatter.format(unLogTimestamp,        // Timestamp
-                                                                   szThreadID,            // Thread ID
-                                                                   szThreadName,          // Thread name
-                                                                   szProcessID,           // Process ID
-                                                                   szLoggerName,          // Logger name
-                                                                   szLogLevelDescription, // Log level description
-                                                                   szLogLevelShortCode,   // Log level short code
-                                                                   *qLogMetadata,         // Log statement metadata
-                                                                   vNamedArgs,            // Named arguments
-                                                                   szLogMessage           // Log message
+        std::string_view szFormattedLogMessage = qFormatter.format(unLogTimestamp,           // Timestamp
+                                                                   szThreadID,               // Thread ID
+                                                                   szThreadName,             // Thread name
+                                                                   szProcessID,              // Process ID
+                                                                   szLoggerName,             // Logger name
+                                                                   szLogLevelDescription,    // Log level description
+                                                                   szLogLevelShortCode,      // Log level short code
+                                                                   *qLogMetadata,            // Log statement metadata
+                                                                   vNamedArgs,               // Named arguments
+                                                                   szLogMessage              // Log message
         );
 
         // Check if logging level is permitted
         if (static_cast<int>(g_eConsoleLogLevel) <= static_cast<int>(qLogLevel))
         {
-            quill::ConsoleSink::write_log(qLogMetadata,          // Metadata
-                                          unLogTimestamp,        // Timestamp
-                                          szThreadID,            // Thread ID
-                                          szThreadName,          // Thread Name
-                                          szProcessID,           // Process ID
-                                          szLoggerName,          // Logger name
-                                          qLogLevel,             // Log level
-                                          szLogLevelDescription, // Log level description
-                                          szLogLevelShortCode,   // Log level short code
-                                          vNamedArgs,            // Named arguments
-                                          szLogMessage,          // Log Message
-                                          szFormattedLogMessage  // Formatted Log Message
+            quill::ConsoleSink::write_log(qLogMetadata,             // Metadata
+                                          unLogTimestamp,           // Timestamp
+                                          szThreadID,               // Thread ID
+                                          szThreadName,             // Thread Name
+                                          szProcessID,              // Process ID
+                                          szLoggerName,             // Logger name
+                                          qLogLevel,                // Log level
+                                          szLogLevelDescription,    // Log level description
+                                          szLogLevelShortCode,      // Log level short code
+                                          vNamedArgs,               // Named arguments
+                                          szLogMessage,             // Log Message
+                                          szFormattedLogMessage     // Formatted Log Message
             );
         }
     }
@@ -282,48 +282,48 @@ namespace logging
      * @author Eli Byrd (edbgkk@mst.edu)
      * @date 2025-08-16
      ******************************************************************************/
-    void MRDTRotatingFileSink::write_log(const quill::MacroMetadata *qLogMetadata,
+    void MRDTRotatingFileSink::write_log(const quill::MacroMetadata* qLogMetadata,
                                          uint64_t unLogTimestamp,
                                          std::string_view szThreadID,
                                          std::string_view szThreadName,
-                                         const std::string &szProcessID,
+                                         const std::string& szProcessID,
                                          std::string_view szLoggerName,
                                          quill::LogLevel qLogLevel,
                                          std::string_view szLogLevelDescription,
                                          std::string_view szLogLevelShortCode,
-                                         const std::vector<std::pair<std::string, std::string>> *vNamedArgs,
+                                         const std::vector<std::pair<std::string, std::string>>* vNamedArgs,
                                          std::string_view szLogMessage,
                                          std::string_view)
     {
         // Format the log message
-        std::string_view szFormattedLogMessage = qFormatter.format(unLogTimestamp,        // Timestamp
-                                                                   szThreadID,            // Thread ID
-                                                                   szThreadName,          // Thread name
-                                                                   szProcessID,           // Process ID
-                                                                   szLoggerName,          // Logger name
-                                                                   szLogLevelDescription, // Log level description
-                                                                   szLogLevelShortCode,   // Log level short code
-                                                                   *qLogMetadata,         // Log statement metadata
-                                                                   vNamedArgs,            // Named arguments
-                                                                   szLogMessage           // Log message
+        std::string_view szFormattedLogMessage = qFormatter.format(unLogTimestamp,           // Timestamp
+                                                                   szThreadID,               // Thread ID
+                                                                   szThreadName,             // Thread name
+                                                                   szProcessID,              // Process ID
+                                                                   szLoggerName,             // Logger name
+                                                                   szLogLevelDescription,    // Log level description
+                                                                   szLogLevelShortCode,      // Log level short code
+                                                                   *qLogMetadata,            // Log statement metadata
+                                                                   vNamedArgs,               // Named arguments
+                                                                   szLogMessage              // Log message
         );
 
         // Check if logging level is permitted
         if (static_cast<int>(g_eFileLogLevel) <= static_cast<int>(qLogLevel))
         {
-            quill::RotatingFileSink::write_log(qLogMetadata,          // Metadata
-                                               unLogTimestamp,        // Timestamp
-                                               szThreadID,            // Thread ID
-                                               szThreadName,          // Thread Name
-                                               szProcessID,           // Process ID
-                                               szLoggerName,          // Logger name
-                                               qLogLevel,             // Log level
-                                               szLogLevelDescription, // Log level description
-                                               szLogLevelShortCode,   // Log level short code
-                                               vNamedArgs,            // Named arguments
-                                               szLogMessage,          // Log Message
-                                               szFormattedLogMessage  // Formatted Log Message
+            quill::RotatingFileSink::write_log(qLogMetadata,             // Metadata
+                                               unLogTimestamp,           // Timestamp
+                                               szThreadID,               // Thread ID
+                                               szThreadName,             // Thread Name
+                                               szProcessID,              // Process ID
+                                               szLoggerName,             // Logger name
+                                               qLogLevel,                // Log level
+                                               szLogLevelDescription,    // Log level description
+                                               szLogLevelShortCode,      // Log level short code
+                                               vNamedArgs,               // Named arguments
+                                               szLogMessage,             // Log Message
+                                               szFormattedLogMessage     // Formatted Log Message
             );
         }
     }
-} // namespace logging
+}    // namespace logging

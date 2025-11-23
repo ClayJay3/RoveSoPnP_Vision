@@ -70,9 +70,9 @@ namespace logging
     // Declare namespace external variables and objects.
     /////////////////////////////////////////
 
-    extern quill::Logger *g_qFileLogger;
-    extern quill::Logger *g_qConsoleLogger;
-    extern quill::Logger *g_qSharedLogger;
+    extern quill::Logger* g_qFileLogger;
+    extern quill::Logger* g_qConsoleLogger;
+    extern quill::Logger* g_qSharedLogger;
 
     extern quill::LogLevel g_eConsoleLogLevel;
     extern quill::LogLevel g_eFileLogLevel;
@@ -102,66 +102,66 @@ namespace logging
      ******************************************************************************/
     class LoggingFilter : public quill::Filter
     {
-    private:
-        // Declare private member variables.
-        quill::LogLevel m_eMinLogLevel;
+        private:
+            // Declare private member variables.
+            quill::LogLevel m_eMinLogLevel;
 
-    public:
-        /******************************************************************************
-         * @brief Construct a new Console Filter object.
-         *
-         * @param eMinLogLevel - The minimum acceptable log level for the console handler.
-         *      All log levels above this will also be logged.
-         *
-         * @author clayjay3 (claytonraycowen@gmail.com)
-         * @date 2025-03-16
-         ******************************************************************************/
-        LoggingFilter(const std::string szFilterBaseType, const quill::LogLevel eMinLogLevel) : quill::Filter(szFilterBaseType)
-        {
-            // Set member variables.
-            m_eMinLogLevel = eMinLogLevel;
-        };
+        public:
+            /******************************************************************************
+             * @brief Construct a new Console Filter object.
+             *
+             * @param eMinLogLevel - The minimum acceptable log level for the console handler.
+             *      All log levels above this will also be logged.
+             *
+             * @author clayjay3 (claytonraycowen@gmail.com)
+             * @date 2025-03-16
+             ******************************************************************************/
+            LoggingFilter(const std::string szFilterBaseType, const quill::LogLevel eMinLogLevel) : quill::Filter(szFilterBaseType)
+            {
+                // Set member variables.
+                m_eMinLogLevel = eMinLogLevel;
+            };
 
-        /******************************************************************************
-         * @brief This method should never be called by this codebase, it is called internally
-         *      by the quill library. This is used to filter log messages based on the log level.
-         *      The individual sinks use this method to determine if a log message should be
-         *      logged if a logger (ie SharedLogger) has multiple sinks.
-         *
-         * @param qLogMetadata - The metadata of the log statement.
-         * @param unLogTimestamp - The timestamp of the log statement.
-         * @param szThreadID - The ID of the thread that generated the log statement.
-         * @param szThreadName - The name of the thread that generated the log statement.
-         * @param szLoggerName - The name of the logger that generated the log statement.
-         * @param qLogLevel - The log level of the log statement.
-         * @param szLogMessage - The message of the log statement.
-         * @param szLogStatement - The full log statement.
-         * @return * QUILL_NODISCARD - Whether or not the log message should be logged.
-         *
-         * @author clayjay3 (claytonraycowen@gmail.com)
-         * @date 2025-02-07
-         ******************************************************************************/
-        QUILL_NODISCARD bool filter(const quill::MacroMetadata *qLogMetadata,
-                                    uint64_t unLogTimestamp,
-                                    std::string_view szThreadID,
-                                    std::string_view szThreadName,
-                                    std::string_view szLoggerName,
-                                    quill::LogLevel qLogLevel,
-                                    std::string_view szLogMessage,
-                                    std::string_view szLogStatement) noexcept override
-        {
-            // Not using these.
-            (void)qLogMetadata;
-            (void)unLogTimestamp;
-            (void)szThreadID;
-            (void)szThreadName;
-            (void)szLoggerName;
-            (void)szLogMessage;
-            (void)szLogStatement;
+            /******************************************************************************
+             * @brief This method should never be called by this codebase, it is called internally
+             *      by the quill library. This is used to filter log messages based on the log level.
+             *      The individual sinks use this method to determine if a log message should be
+             *      logged if a logger (ie SharedLogger) has multiple sinks.
+             *
+             * @param qLogMetadata - The metadata of the log statement.
+             * @param unLogTimestamp - The timestamp of the log statement.
+             * @param szThreadID - The ID of the thread that generated the log statement.
+             * @param szThreadName - The name of the thread that generated the log statement.
+             * @param szLoggerName - The name of the logger that generated the log statement.
+             * @param qLogLevel - The log level of the log statement.
+             * @param szLogMessage - The message of the log statement.
+             * @param szLogStatement - The full log statement.
+             * @return * QUILL_NODISCARD - Whether or not the log message should be logged.
+             *
+             * @author clayjay3 (claytonraycowen@gmail.com)
+             * @date 2025-02-07
+             ******************************************************************************/
+            QUILL_NODISCARD bool filter(const quill::MacroMetadata* qLogMetadata,
+                                        uint64_t unLogTimestamp,
+                                        std::string_view szThreadID,
+                                        std::string_view szThreadName,
+                                        std::string_view szLoggerName,
+                                        quill::LogLevel qLogLevel,
+                                        std::string_view szLogMessage,
+                                        std::string_view szLogStatement) noexcept override
+            {
+                // Not using these.
+                (void) qLogMetadata;
+                (void) unLogTimestamp;
+                (void) szThreadID;
+                (void) szThreadName;
+                (void) szLoggerName;
+                (void) szLogMessage;
+                (void) szLogStatement;
 
-            // Log only m_eMinLogLevel or higher to stdout.
-            return qLogLevel >= m_eMinLogLevel;
-        }
+                // Log only m_eMinLogLevel or higher to stdout.
+                return qLogLevel >= m_eMinLogLevel;
+            }
     };
 
     /////////////////////////////////////////
@@ -198,66 +198,68 @@ namespace logging
      ******************************************************************************/
     class MRDTConsoleSink : public quill::ConsoleSink
     {
-    public:
-        /******************************************************************************
-         * @brief Constructs a new MRDTConsoleSink object with specified formatting and
-         *        console colors. This constructor initializes the sink with a log
-         *        message pattern, timestamp format, and optional timezone settings.
-         *        The constructor also allows customization of the output szStream.
-         *
-         * @param qColors - The console colors configuration for highlighting log levels.
-         * @param szFormatPattern - The pattern used to format the log message.
-         * @param szTimeFormat - The format of the timestamp in the log message.
-         * @param qTimestampTimezone - The timezone used for the timestamp (default: LocalTime).
-         * @param szStream - The szStream to output the logs to (default: "stdout").
-         *
-         * @note Ensure that the format pattern and time format are properly defined before
-         *       using this constructor, as they directly affect the log output structure.
-         *
-         * @warning Incorrect configuration of format patterns or time formats may lead to
-         *          malformed log outputs.
-         *
-         * @see quill::ConsoleSink
-         * @see quill::ConsoleSinkConfig
-         * @see quill::PatternFormatter
-         *
-         * @author Eli Byrd (edbgkk@mst.edu)
-         * @date 2025-08-16
-         ******************************************************************************/
-        MRDTConsoleSink(const quill::ConsoleSinkConfig::Colours &qColors, // Custom Colors Import
-                        const quill::ConsoleSinkConfig::ColourMode &qColorMode,
-                        const std::string &szFormatPattern,                              // Custom Format Pattern
-                        const std::string &szTimeFormat,                                 // Custom Time Format
-                        quill::Timezone qTimestampTimezone = quill::Timezone::LocalTime, // Timezone
-                        const std::string &szStream = "stdout"                           // Stream
-                        ) : quill::ConsoleSink([&]
-                                               {
+        public:
+            /******************************************************************************
+             * @brief Constructs a new MRDTConsoleSink object with specified formatting and
+             *        console colors. This constructor initializes the sink with a log
+             *        message pattern, timestamp format, and optional timezone settings.
+             *        The constructor also allows customization of the output szStream.
+             *
+             * @param qColors - The console colors configuration for highlighting log levels.
+             * @param szFormatPattern - The pattern used to format the log message.
+             * @param szTimeFormat - The format of the timestamp in the log message.
+             * @param qTimestampTimezone - The timezone used for the timestamp (default: LocalTime).
+             * @param szStream - The szStream to output the logs to (default: "stdout").
+             *
+             * @note Ensure that the format pattern and time format are properly defined before
+             *       using this constructor, as they directly affect the log output structure.
+             *
+             * @warning Incorrect configuration of format patterns or time formats may lead to
+             *          malformed log outputs.
+             *
+             * @see quill::ConsoleSink
+             * @see quill::ConsoleSinkConfig
+             * @see quill::PatternFormatter
+             *
+             * @author Eli Byrd (edbgkk@mst.edu)
+             * @date 2025-08-16
+             ******************************************************************************/
+            MRDTConsoleSink(const quill::ConsoleSinkConfig::Colours& qColors,                   // Custom Colors Import
+                            const quill::ConsoleSinkConfig::ColourMode& qColorMode,
+                            const std::string& szFormatPattern,                                 // Custom Format Pattern
+                            const std::string& szTimeFormat,                                    // Custom Time Format
+                            quill::Timezone qTimestampTimezone = quill::Timezone::LocalTime,    // Timezone
+                            const std::string& szStream        = "stdout"                       // Stream
+                            ) :
+                quill::ConsoleSink(
+                    [&]
+                    {
                         // Configure ConsoleSinkConfig in a lambda to inline
                         quill::ConsoleSinkConfig qConsoleConfig;
                         qConsoleConfig.set_stream(szStream);
                         qConsoleConfig.set_colour_mode(qColorMode);
                         qConsoleConfig.set_colours(qColors);
                         qConsoleConfig.set_override_pattern_formatter_options(quill::PatternFormatterOptions(szFormatPattern, szTimeFormat, qTimestampTimezone));
-                        return qConsoleConfig; }()),
-                            qFormatter(quill::PatternFormatterOptions(szFormatPattern, szTimeFormat, qTimestampTimezone)) // Pass Parameters into qFormatter type
-        {
-        }
+                        return qConsoleConfig;
+                    }()),
+                qFormatter(quill::PatternFormatterOptions(szFormatPattern, szTimeFormat, qTimestampTimezone))    // Pass Parameters into qFormatter type
+            {}
 
-        void write_log(const quill::MacroMetadata *qLogMetadata,
-                       uint64_t unLogTimestamp,
-                       std::string_view szThreadID,
-                       std::string_view szThreadName,
-                       const std::string &szProcessID,
-                       std::string_view szLoggerName,
-                       quill::LogLevel qLogLevel,
-                       std::string_view szLogLevelDescription,
-                       std::string_view szLogLevelShortCode,
-                       const std::vector<std::pair<std::string, std::string>> *vNamedArgs,
-                       std::string_view szLogMessage,
-                       std::string_view) override;
+            void write_log(const quill::MacroMetadata* qLogMetadata,
+                           uint64_t unLogTimestamp,
+                           std::string_view szThreadID,
+                           std::string_view szThreadName,
+                           const std::string& szProcessID,
+                           std::string_view szLoggerName,
+                           quill::LogLevel qLogLevel,
+                           std::string_view szLogLevelDescription,
+                           std::string_view szLogLevelShortCode,
+                           const std::vector<std::pair<std::string, std::string>>* vNamedArgs,
+                           std::string_view szLogMessage,
+                           std::string_view) override;
 
-    private:
-        quill::PatternFormatter qFormatter;
+        private:
+            quill::PatternFormatter qFormatter;
     };
 
     /******************************************************************************
@@ -290,58 +292,58 @@ namespace logging
      ******************************************************************************/
     class MRDTRotatingFileSink : public quill::RotatingFileSink
     {
-    public:
-        /******************************************************************************
-         * @brief Constructs a new MRDTRotatingFileSink object with specified formatting,
-         *        file rotation settings, and an optional file event notifier. This constructor
-         *        initializes the sink with a log message pattern, timestamp format, and
-         *        configuration for rotating the log file based on size or time interval.
-         *
-         * @param qFilename - The path to the log file.
-         * @param qConfig - The configuration for rotating the log file (e.g., based on size or time).
-         * @param szFormatPattern - The pattern used to format the log message.
-         * @param szTimeFormat - The format of the timestamp in the log message.
-         * @param qTimestampTimezone - The timezone used for the timestamp (default: LocalTime).
-         * @param qFileEventNotifier - Optional event notifier for file-related events (default: none).
-         *
-         * @note Ensure that the file rotation configuration (`config`) is correctly set up to avoid
-         *       unexpected log file behavior. The format pattern and time format should also be defined
-         *       correctly to ensure logs are written with the intended structure.
-         *
-         * @warning Misconfiguration of file rotation settings or format patterns may result in loss of log data or malformed log outputs.
-         *
-         * @see quill::RotatingFileSink
-         * @see quill::PatternFormatter
-         *
-         * @author Eli Byrd (edbgkk@mst.edu)
-         * @date 2025-08-16
-         ******************************************************************************/
-        MRDTRotatingFileSink(const quill::fs::path &qFilename,                                                                 // File Path
-                             const quill::RotatingFileSinkConfig &qConfig,                                                     // Rotating File Sink Config
-                             const std::string &szFormatPattern,                                                               // Custom Format Pattern
-                             const std::string &szTimeFormat,                                                                  // Custom Time Format
-                             quill::Timezone qTimestampTimezone = quill::Timezone::LocalTime,                                  // Timezone
-                             quill::FileEventNotifier qFileEventNotifier = quill::FileEventNotifier{}                          // Event Notifier (Default: None)
-                             ) : quill::RotatingFileSink(qFilename, qConfig, qFileEventNotifier),                              // Pass Parameters into quill::RotatingFileSink
-                                 qFormatter(quill::PatternFormatterOptions(szFormatPattern, szTimeFormat, qTimestampTimezone)) // Pass Parameters into qFormatter type
-        {
-        }
+        public:
+            /******************************************************************************
+             * @brief Constructs a new MRDTRotatingFileSink object with specified formatting,
+             *        file rotation settings, and an optional file event notifier. This constructor
+             *        initializes the sink with a log message pattern, timestamp format, and
+             *        configuration for rotating the log file based on size or time interval.
+             *
+             * @param qFilename - The path to the log file.
+             * @param qConfig - The configuration for rotating the log file (e.g., based on size or time).
+             * @param szFormatPattern - The pattern used to format the log message.
+             * @param szTimeFormat - The format of the timestamp in the log message.
+             * @param qTimestampTimezone - The timezone used for the timestamp (default: LocalTime).
+             * @param qFileEventNotifier - Optional event notifier for file-related events (default: none).
+             *
+             * @note Ensure that the file rotation configuration (`config`) is correctly set up to avoid
+             *       unexpected log file behavior. The format pattern and time format should also be defined
+             *       correctly to ensure logs are written with the intended structure.
+             *
+             * @warning Misconfiguration of file rotation settings or format patterns may result in loss of log data or malformed log outputs.
+             *
+             * @see quill::RotatingFileSink
+             * @see quill::PatternFormatter
+             *
+             * @author Eli Byrd (edbgkk@mst.edu)
+             * @date 2025-08-16
+             ******************************************************************************/
+            MRDTRotatingFileSink(const quill::fs::path& qFilename,                                               // File Path
+                                 const quill::RotatingFileSinkConfig& qConfig,                                   // Rotating File Sink Config
+                                 const std::string& szFormatPattern,                                             // Custom Format Pattern
+                                 const std::string& szTimeFormat,                                                // Custom Time Format
+                                 quill::Timezone qTimestampTimezone          = quill::Timezone::LocalTime,       // Timezone
+                                 quill::FileEventNotifier qFileEventNotifier = quill::FileEventNotifier{}        // Event Notifier (Default: None)
+                                 ) :
+                quill::RotatingFileSink(qFilename, qConfig, qFileEventNotifier),                                 // Pass Parameters into quill::RotatingFileSink
+                qFormatter(quill::PatternFormatterOptions(szFormatPattern, szTimeFormat, qTimestampTimezone))    // Pass Parameters into qFormatter type
+            {}
 
-        void write_log(const quill::MacroMetadata *qLogMetadata,
-                       uint64_t unLogTimestamp,
-                       std::string_view szThreadID,
-                       std::string_view szThreadName,
-                       const std::string &szProcessID,
-                       std::string_view szLoggerName,
-                       quill::LogLevel qLogLevel,
-                       std::string_view szLogLevelDescription,
-                       std::string_view szLogLevelShortCode,
-                       const std::vector<std::pair<std::string, std::string>> *vNamedArgs,
-                       std::string_view szLogMessage,
-                       std::string_view) override;
+            void write_log(const quill::MacroMetadata* qLogMetadata,
+                           uint64_t unLogTimestamp,
+                           std::string_view szThreadID,
+                           std::string_view szThreadName,
+                           const std::string& szProcessID,
+                           std::string_view szLoggerName,
+                           quill::LogLevel qLogLevel,
+                           std::string_view szLogLevelDescription,
+                           std::string_view szLogLevelShortCode,
+                           const std::vector<std::pair<std::string, std::string>>* vNamedArgs,
+                           std::string_view szLogMessage,
+                           std::string_view) override;
 
-    private:
-        quill::PatternFormatter qFormatter;
+        private:
+            quill::PatternFormatter qFormatter;
     };
-} // namespace logging
-#endif // AUTONOMY_LOGGING_H
+}    // namespace logging
+#endif    // AUTONOMY_LOGGING_H
