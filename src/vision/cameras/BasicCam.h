@@ -36,16 +36,7 @@ class BasicCam : public BasicCamera
         // Declare public methods and member variables.
         /////////////////////////////////////////
 
-        BasicCam(const std::string szCameraPath,
-                 const int nPropResolutionX,
-                 const int nPropResolutionY,
-                 const int nPropFramesPerSecond,
-                 const PIXEL_FORMATS ePropPixelFormat,
-                 const double dPropHorizontalFOV,
-                 const double dPropVerticalFOV,
-                 const bool bEnableRecordingFlag,
-                 const int nNumFrameRetrievalThreads = 10);
-        BasicCam(const int nCameraIndex,
+        BasicCam(const std::string szCameraSerial,
                  const int nPropResolutionX,
                  const int nPropResolutionY,
                  const int nPropFramesPerSecond,
@@ -70,6 +61,7 @@ class BasicCam : public BasicCamera
         /////////////////////////////////////////
         // Basic Camera specific.
         cv::VideoCapture m_cvCamera;
+        cv::VideoWriter m_cvVideoWriter;
 
         // Mats for storing frames.
         cv::Mat m_cvFrame;
@@ -77,6 +69,9 @@ class BasicCam : public BasicCamera
         /////////////////////////////////////////
         // Declare private methods.
         /////////////////////////////////////////
+
+        int FindCameraIndexBySerial(const std::string& szCameraSerial);
+
         void ThreadedContinuousCode() override;
         void PooledLinearCode() override;
 };

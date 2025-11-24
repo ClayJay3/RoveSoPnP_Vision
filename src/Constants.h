@@ -84,7 +84,7 @@ namespace constants
     extern const int GANTRYCAM_HORIZONTAL_FOV;
     extern const int GANTRYCAM_VERTICAL_FOV;
     extern const int GANTRYCAM_FRAME_RETRIEVAL_THREADS;
-    extern const int GANTRYCAM_INDEX;
+    extern const std::string GANTRYCAM_SERIAL;
     extern const PIXEL_FORMATS GANTRYCAM_PIXELTYPE;
     ///////////////////////////////////////////////////////////////////////////
 }    // namespace constants

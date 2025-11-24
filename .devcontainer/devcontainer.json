@@ -21,6 +21,9 @@
         // X11 socket for XWayland
         "-v",
         "/tmp/.X11-unix:/tmp/.X11-unix",
+        // Link /dev so v4l /dev is accessible.
+        "-v",
+        "/dev:/dev",
         // Wayland socket for native Wayland apps
         // "-v",
         // "/run/user/1000/wayland:/run/user/1000/wayland",

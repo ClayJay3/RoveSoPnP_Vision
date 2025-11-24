@@ -25,7 +25,7 @@ namespace constants
     ///////////////////////////////////////////////////////////////////////////
 
     // Logging constants.
-    const std::string LOGGING_OUTPUT_PATH_ABSOLUTE = "../logs/";                  // The absolute path to write output logging and video files to.
+    const std::string LOGGING_OUTPUT_PATH_ABSOLUTE = "../vision_logs/";           // The absolute path to write output logging and video files to.
     const quill::LogLevel CONSOLE_MIN_LEVEL        = quill::LogLevel::TraceL3;    // The minimum logging level that is allowed to send to the console log stream.
     const quill::LogLevel FILE_MIN_LEVEL           = quill::LogLevel::TraceL3;    // The minimum logging level that is allowed to send to the file log streams.
     const quill::LogLevel ROVECOMM_MIN_LEVEL       = quill::LogLevel::Info;       // The minimum logging level that is allowed to send to the RoveComm log stream.
@@ -72,13 +72,13 @@ namespace constants
     ///////////////////////////////////////////////////////////////////////////
 
     // Ground Basic Cam.
-    const int GANTRYCAM_RESOLUTIONX             = 1280;    // The horizontal pixel resolution to resize the basiccam images to.
-    const int GANTRYCAM_RESOLUTIONY             = 720;     // The vertical pixel resolution to resize the basiccam images to.
-    const int GANTRYCAM_FPS                     = 30;      // The FPS to use for the basiccam.
-    const int GANTRYCAM_HORIZONTAL_FOV          = 110;     // The horizontal FOV of the camera. Useful for future calculations.
-    const int GANTRYCAM_VERTICAL_FOV            = 70;      // The vertical FOV of the camera. Useful for future calculations.
-    const int GANTRYCAM_FRAME_RETRIEVAL_THREADS = 5;       // The number of threads allocated to the threadpool for performing frame copies to other threads.
-    const int GANTRYCAM_INDEX                   = 0;       // The /dev/video index of the camera.
+    const int GANTRYCAM_RESOLUTIONX             = 1280;            // The horizontal pixel resolution to resize the basiccam images to.
+    const int GANTRYCAM_RESOLUTIONY             = 720;             // The vertical pixel resolution to resize the basiccam images to.
+    const int GANTRYCAM_FPS                     = 30;              // The FPS to use for the basiccam.
+    const int GANTRYCAM_HORIZONTAL_FOV          = 110;             // The horizontal FOV of the camera. Useful for future calculations.
+    const int GANTRYCAM_VERTICAL_FOV            = 70;              // The vertical FOV of the camera. Useful for future calculations.
+    const int GANTRYCAM_FRAME_RETRIEVAL_THREADS = 5;               // The number of threads allocated to the threadpool for performing frame copies to other threads.
+    const std::string GANTRYCAM_SERIAL          = "2022051301";    // The serial of the camera to open. You can get this by running: "lsusb -v | grep -i iSerial"
     const PIXEL_FORMATS GANTRYCAM_PIXELTYPE     = PIXEL_FORMATS::eBGR;    // The pixel layout of the camera.
 
     ///////////////////////////////////////////////////////////////////////////

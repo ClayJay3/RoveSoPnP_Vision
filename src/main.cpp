@@ -9,6 +9,7 @@
  ******************************************************************************/
 
 #include "./Logging.h"
+#include "vision/cameras/BasicCam.h"
 
 /// \cond
 #include <sys/ioctl.h>
@@ -132,9 +133,21 @@ int main()
     IPS IterPerSecond = IPS();
 
     // Declare and initialize cameras.
+    std::unique_ptr<BasicCam> pGantryCam = std::make_unique<BasicCam>(constants::GANTRYCAM_SERIAL,
+                                                                      constants::GANTRYCAM_RESOLUTIONX,
+                                                                      constants::GANTRYCAM_RESOLUTIONY,
+                                                                      constants::GANTRYCAM_FPS,
+                                                                      PIXEL_FORMATS::eBGRA,
+                                                                      constants::GANTRYCAM_HORIZONTAL_FOV,
+                                                                      constants::GANTRYCAM_VERTICAL_FOV,
+                                                                      true,
+                                                                      constants::GANTRYCAM_FRAME_RETRIEVAL_THREADS);
 
     // Create a vector of ints to store the FPS values for each thread.
     std::vector<uint32_t> vThreadFPSValues;
+
+    // Start the camera.
+    pGantryCam->Start();
 
     /*
         This while loop is the main periodic loop for the RoveSoPNP program.
@@ -145,12 +158,14 @@ int main()
         // Add each threads FPS value to the vector.
         vThreadFPSValues.clear();
         vThreadFPSValues.push_back(static_cast<uint32_t>(IterPerSecond.GetExactIPS()));
+        vThreadFPSValues.push_back(static_cast<uint32_t>(pGantryCam->GetIPS().GetExactIPS()));
 
         // Create a string to append FPS values to.
         std::string szMainInfo = "";
         // Get FPS of all cameras and detectors and construct the info into a string.
-        szMainInfo += "\n--------[ Threads FPS ]--------\n";
+        szMainInfo += "--------[ Threads FPS ]--------\n";
         szMainInfo += "Main Process FPS: " + std::to_string(IterPerSecond.GetExactIPS()) + "\n";
+        szMainInfo += "Gantry Camera FPS: " + std::to_string(pGantryCam->GetIPS().GetExactIPS()) + "\n";
 
         // Submit logger message.
         LOG_DEBUG(logging::g_qSharedLogger, "{}", szMainInfo);

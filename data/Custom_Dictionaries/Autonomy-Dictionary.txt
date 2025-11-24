@@ -13,6 +13,7 @@ DPYTHON
 DQUILL
 DWITH
 EIGEN
+fourcc
 GANTRYCAM
 highgui
 imread
@@ -44,6 +45,7 @@ qrcode
 RESOLUTIONX
 RESOLUTIONY
 ROVECOMM
+Shafe
 tzdata
 usbutils
 wechat

@@ -12,10 +12,22 @@
 #include "../../Constants.h"
 #include "../../Logging.h"
 
+#ifdef _WIN32
+#include <dshow.h>
+#include <windows.h>
+#pragma comment(lib, "strmiids")
+#pragma comment(lib, "ole32")
+#pragma comment(lib, "oleaut32")
+#else
+#include <algorithm>
+#include <dirent.h>
+#include <fstream>
+#endif
+
 /******************************************************************************
  * @brief Construct a new Basic Cam:: Basic Cam object.
  *
- * @param szCameraPath - The file path to the camera hardware.
+ * @param szCameraSerial - The file path to the camera hardware.
  * @param nPropResolutionX - X res of camera.
  * @param nPropResolutionY - Y res of camera.
  * @param nPropFramesPerSecond - FPS camera is running at.
@@ -28,7 +40,7 @@
  * @author clayjay3 (claytonraycowen@gmail.com)
  * @date 2025-08-20
  ******************************************************************************/
-BasicCam::BasicCam(const std::string szCameraPath,
+BasicCam::BasicCam(const std::string szCameraSerial,
                    const int nPropResolutionX,
                    const int nPropResolutionY,
                    const int nPropFramesPerSecond,
@@ -37,7 +49,7 @@ BasicCam::BasicCam(const std::string szCameraPath,
                    const double dPropVerticalFOV,
                    const bool bEnableRecordingFlag,
                    const int nNumFrameRetrievalThreads) :
-    BasicCamera(szCameraPath,
+    BasicCamera(szCameraSerial,
                 nPropResolutionX,
                 nPropResolutionY,
                 nPropFramesPerSecond,
@@ -50,83 +62,55 @@ BasicCam::BasicCam(const std::string szCameraPath,
     // Initialize the OpenCV mat to a black/empty image the size of the camera resolution.
     m_cvFrame = cv::Mat::zeros(nPropResolutionY, nPropResolutionX, CV_8UC4);
 
-    // Set video cap properties.
+    // Try to detect and find the video index of the camera matching the given serial number.
+    int nCameraIndex = this->FindCameraIndexBySerial(szCameraSerial);
+    LOG_INFO(logging::g_qSharedLogger, "Camera with serial number {} found at video index {}", szCameraSerial, nCameraIndex);
+
+    // Set video cvCamera properties.
     m_cvCamera.set(cv::CAP_PROP_FRAME_WIDTH, nPropResolutionX);
     m_cvCamera.set(cv::CAP_PROP_FRAME_HEIGHT, nPropResolutionY);
     m_cvCamera.set(cv::CAP_PROP_FPS, nPropFramesPerSecond);
 
     // Attempt to open camera with OpenCV's VideoCapture and print if successfully opened or not.
-    if (m_cvCamera.open(szCameraPath))
+    if (m_cvCamera.open(nCameraIndex))
     {
         // Submit logger message.
-        LOG_INFO(logging::g_qSharedLogger, "Camera {} at path/URL {} has been successfully opened.", m_cvCamera.getBackendName(), szCameraPath);
+        LOG_INFO(logging::g_qSharedLogger, "Camera {} with serial number {} has been successfully opened.", m_cvCamera.getBackendName(), szCameraSerial);
     }
     else
     {
         // Submit logger message.
-        LOG_ERROR(logging::g_qSharedLogger, "Unable to open camera at path/URL {}", szCameraPath);
+        LOG_ERROR(logging::g_qSharedLogger, "Unable to open camera with serial number {}", szCameraSerial);
     }
 
-    // Set max FPS of the ThreadedContinuousCode method.
-    this->SetMainThreadIPSLimit(nPropFramesPerSecond);
-}
-
-/******************************************************************************
- * @brief Construct a new Basic Cam:: Basic Cam object. Overloaded for dev/video
- *      indexes.
- *
- * @param nCameraIndex - The video index that the camera is connected on.
- * @param nPropResolutionX - X res of camera.
- * @param nPropResolutionY - Y res of camera.
- * @param nPropFramesPerSecond - FPS camera is running at.
- * @param ePropPixelFormat - The pixel layout/format of the image.
- * @param dPropHorizontalFOV - The horizontal field of view.
- * @param dPropVerticalFOV - The vertical field of view.
- * @param bEnableRecordingFlag - Whether or not this camera should be recorded.
- * @param nNumFrameRetrievalThreads - The number of threads to use for frame queueing and copying.
- *
- * @author clayjay3 (claytonraycowen@gmail.com)
- * @date 2025-08-20
- ******************************************************************************/
-BasicCam::BasicCam(const int nCameraIndex,
-                   const int nPropResolutionX,
-                   const int nPropResolutionY,
-                   const int nPropFramesPerSecond,
-                   const PIXEL_FORMATS ePropPixelFormat,
-                   const double dPropHorizontalFOV,
-                   const double dPropVerticalFOV,
-                   const bool bEnableRecordingFlag,
-                   const int nNumFrameRetrievalThreads) :
-    BasicCamera(nCameraIndex,
-                nPropResolutionX,
-                nPropResolutionY,
-                nPropFramesPerSecond,
-                ePropPixelFormat,
-                dPropHorizontalFOV,
-                dPropVerticalFOV,
-                bEnableRecordingFlag,
-                nNumFrameRetrievalThreads)
-{
-    // Initialize the OpenCV mat to a black/empty image the size of the camera resolution.
-    m_cvFrame = cv::Mat::zeros(nPropResolutionY, nPropResolutionX, CV_8UC4);
-
-    // Set video cap properties.
-    m_cvCamera.set(cv::CAP_PROP_FRAME_WIDTH, nPropResolutionX);
-    m_cvCamera.set(cv::CAP_PROP_FRAME_HEIGHT, nPropResolutionY);
-    m_cvCamera.set(cv::CAP_PROP_FPS, nPropFramesPerSecond);
-
-    // Attempt to open camera with OpenCV's VideoCapture.
-    m_cvCamera.open(m_nCameraIndex);
-    // Check if the camera was successfully opened.
-    if (m_cvCamera.isOpened())
+    // Check if recording is enabled.
+    if (bEnableRecordingFlag)
     {
-        // Submit logger message.
-        LOG_INFO(logging::g_qSharedLogger, "Camera {} at video index {} has been successfully opened.", m_cvCamera.getBackendName(), m_nCameraIndex);
-    }
-    else
-    {
-        // Submit logger message.
-        LOG_ERROR(logging::g_qSharedLogger, "Unable to open camera at video index {}", m_nCameraIndex);
+        // Create the path for the camera where we will store out video output file.
+        std::filesystem::path szFilePath;
+        std::filesystem::path szFilenameWithExtension;
+        szFilePath = constants::LOGGING_OUTPUT_PATH_ABSOLUTE;                 // Main location for all recordings.
+        szFilePath += logging::g_szProgramStartTimeString + "/recordings";    // Folder for each program run.
+        szFilenameWithExtension = this->GetCameraLocation() + ".mkv";         // Folder for each camera index or name.
+
+        // Check if directory exists.
+        if (!std::filesystem::exists(szFilePath))
+        {
+            // Create directory.
+            if (!std::filesystem::create_directories(szFilePath))
+            {
+                // Submit logger message.
+                LOG_ERROR(logging::g_qSharedLogger,
+                          "Unable to create the VideoWriter output directory: {} for camera {}",
+                          szFilePath.string(),
+                          this->GetCameraLocation());
+            }
+        }
+
+        // Construct the full output path.
+        std::filesystem::path szFullOutputPath = szFilePath / szFilenameWithExtension;
+        // Initialize the VideoWriter object.
+        m_cvVideoWriter.open(szFullOutputPath.string(), cv::VideoWriter::fourcc('H', '2', '6', '4'), nPropFramesPerSecond, this->GetPropResolution());
     }
 
     // Set max FPS of the ThreadedContinuousCode method.
@@ -142,6 +126,12 @@ BasicCam::BasicCam(const int nCameraIndex,
  ******************************************************************************/
 BasicCam::~BasicCam()
 {
+    // Close the video writer if recording was enabled.
+    if (m_bEnableRecordingFlag)
+    {
+        m_cvVideoWriter.release();
+    }
+
     // Stop threaded code.
     this->RequestStop();
     this->Join();
@@ -242,6 +232,13 @@ void BasicCam::ThreadedContinuousCode()
         {
             // Resize the frame.
             cv::resize(m_cvFrame, m_cvFrame, cv::Size(m_nPropResolutionX, m_nPropResolutionY), 0.0, 0.0, constants::BASICCAM_RESIZE_INTERPOLATION_METHOD);
+
+            // Check if the recording flag is enabled.
+            if (m_bEnableRecordingFlag)
+            {
+                // Write the current frame to the video writer.
+                m_cvVideoWriter.write(m_cvFrame);
+            }
         }
         else
         {
@@ -368,4 +365,145 @@ std::string BasicCam::GetCameraLocation() const
         // If video path, return path string.
         return m_szCameraPath;
     }
+}
+
+/******************************************************************************
+ * @brief
+ *
+ * @param szCameraSerial -
+ * @return int -
+ *
+ * @author clayjay3 (claytonraycowen@gmail.com)
+ * @date 2025-11-23
+ ******************************************************************************/
+int BasicCam::FindCameraIndexBySerial(const std::string& szCameraSerial)
+{
+    int nCameraIndex = -1;
+
+#ifdef _WIN32
+    // ---------------------------------------------------------
+    // WINDOWS IMPLEMENTATION (DirectShow)
+    // ---------------------------------------------------------
+    HRESULT hr;
+    ICreateDevEnum* pSysDevEnum = NULL;
+
+    // Initialize COM library
+    CoInitialize(NULL);
+
+    hr = CoCreateInstance(CLSID_SystemDeviceEnum, NULL, CLSCTX_INPROC_SERVER, IID_ICreateDevEnum, (void**) &pSysDevEnum);
+
+    if (SUCCEEDED(hr))
+    {
+        IEnumMoniker* pEnumCat = NULL;
+        hr                     = pSysDevEnum->CreateClassEnumerator(CLSID_VideoInputDeviceCategory, &pEnumCat, 0);
+
+        if (hr == S_OK)
+        {
+            IMoniker* pMoniker = NULL;
+            ULONG cFetched;
+            int index = 0;    // This index matches the order OpenCV uses for CAP_DSHOW
+
+            while (pEnumCat->Next(1, &pMoniker, &cFetched) == S_OK)
+            {
+                IPropertyBag* pPropBag;
+                hr = pMoniker->BindToStorage(0, 0, IID_IPropertyBag, (void**) &pPropBag);
+
+                if (SUCCEEDED(hr))
+                {
+                    VARIANT var;
+                    VariantInit(&var);
+
+                    // Read the "DevicePath" which contains the Hardware ID / Serial
+                    // Format is typically: \\?\usb#vid_xxxx&pid_yyyy#<SERIAL>#{guid}
+                    hr = pPropBag->Read(L"DevicePath", &var, 0);
+                    if (SUCCEEDED(hr))
+                    {
+                        // Convert BSTR (Wide) to std::string (UTF-8)
+                        int count = WideCharToMultiByte(CP_UTF8, 0, var.bstrVal, -1, NULL, 0, NULL, NULL);
+                        std::string devicePath(count, 0);
+                        WideCharToMultiByte(CP_UTF8, 0, var.bstrVal, -1, &devicePath[0], count, NULL, NULL);
+                        if (!devicePath.empty() && devicePath.back() == '\0')
+                            devicePath.pop_back();
+
+                        // Parse the Serial from the Path
+                        // We look for the string between the last two '#' characters before the GUID
+                        size_t lastHash       = devicePath.rfind('#');
+                        size_t secondLastHash = (lastHash != std::string::npos) ? devicePath.rfind('#', lastHash - 1) : std::string::npos;
+
+                        if (lastHash != std::string::npos && secondLastHash != std::string::npos)
+                        {
+                            std::string szCurrentSerial = devicePath.substr(secondLastHash + 1, lastHash - secondLastHash - 1);
+
+                            // Case-insensitive comparison
+                            if (_stricmp(szCurrentSerial.c_str(), szCameraSerial.c_str()) == 0)
+                            {
+                                nCameraIndex = index;
+                            }
+                        }
+                    }
+                    VariantClear(&var);
+                    pPropBag->Release();
+                }
+                pMoniker->Release();
+                if (nCameraIndex != -1)
+                    break;    // Found it
+                index++;
+            }
+            pEnumCat->Release();
+        }
+        pSysDevEnum->Release();
+    }
+    CoUninitialize();
+
+    if (nCameraIndex != -1)
+    {
+        LOG_NOTICE(logging::g_qSharedLogger, "[Windows] Found camera at index: {}", nCameraIndex);
+    }
+
+#else
+    // ---------------------------------------------------------
+    // LINUX IMPLEMENTATION (SysFS / V4L2)
+    // ---------------------------------------------------------
+    DIR* stdDIR = opendir("/sys/class/video4linux");
+    if (stdDIR)
+    {
+        struct dirent* ent;
+        while ((ent = readdir(stdDIR)) != NULL)
+        {
+            std::string szName = ent->d_name;    // e.g., "video0"
+            if (szName.find("video") == 0)
+            {
+                // Path to serial: /sys/class/video4linux/videoN/device/serial
+                // Note: "device" is a symlink to the actual USB device directory.
+                std::string szSerialPath = "/sys/class/video4linux/" + szName + "/device/serial";
+                std::ifstream stdSerialFile(szSerialPath);
+
+                if (stdSerialFile.is_open())
+                {
+                    std::string szCurrentSerial;
+                    if (std::getline(stdSerialFile, szCurrentSerial))
+                    {
+                        // Remove potential trailing newlines/whitespace
+                        szCurrentSerial.erase(szCurrentSerial.find_last_not_of(" \n\r\t") + 1);
+
+                        if (szCurrentSerial == szCameraSerial)
+                        {
+                            std::string szIndex = szName.substr(5);    // Strip "video" to get "0".
+                            nCameraIndex        = std::stoi(szIndex);
+                            break;
+                        }
+                    }
+                }
+            }
+        }
+        closedir(stdDIR);
+    }
+
+    if (nCameraIndex != -1)
+    {
+        LOG_NOTICE(logging::g_qSharedLogger, "[Linux] Found camera at index: {}", nCameraIndex);
+    }
+#endif
+
+    return nCameraIndex;
 }

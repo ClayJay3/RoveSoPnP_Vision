@@ -60,7 +60,8 @@ RUN apt-get update && apt-get install --no-install-recommends -y \
     nlohmann-json3-dev \
     libeigen3-dev \
     tzdata \
-    ssh && \
+    ssh \
+    gdb && \
     rm -rf /var/lib/apt/lists/*
 
 # Set Timezone
@@ -113,7 +114,7 @@ RUN git clone --depth 1 --branch ${OPENCV_VERSION} https://github.com/opencv/ope
 RUN chsh -s /usr/bin/fish
 
 # Clone RoveSoPNP Repository
-RUN git clone --recurse-submodules -j8 https://github.com/ClayJay3/RoveSoPNP_Vision.git
+RUN git clone --recurse-submodules -j8 https://github.com/ClayJay3/RoveSoPnP_Vision.git
 
 # Set Working Directory
 WORKDIR /opt/RoveSoPNP/
@@ -121,7 +122,7 @@ WORKDIR /opt/RoveSoPNP/
 # Set Labels
 LABEL authors="Missouri S&T RoveSoPNP Design Team"
 LABEL maintainer="claytonraycowen@gmail.com"
-LABEL org.opencontainers.image.source=https://github.com/ClayJay3/RoveSoPNP_Vision.git
+LABEL org.opencontainers.image.source=https://github.com/ClayJay3/RoveSoPnP_Vision.git
 LABEL org.opencontainers.image.licenses=GPL-3.0-only
 LABEL org.opencontainers.image.version="v24.5.0"
 LABEL org.opencontainers.image.description="Docker Image for Ubuntu ${UBUNTU_MAJOR} with OpenCV ${OPENCV_VERSION}, Quill ${QUILL_VERSION}."
