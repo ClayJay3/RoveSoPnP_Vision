@@ -70,8 +70,6 @@ class BasicCam : public BasicCamera
         // Declare private methods.
         /////////////////////////////////////////
 
-        int FindCameraIndexBySerial(const std::string& szCameraSerial);
-
         void ThreadedContinuousCode() override;
         void PooledLinearCode() override;
 };

@@ -62,25 +62,21 @@ BasicCam::BasicCam(const std::string szCameraSerial,
     // Initialize the OpenCV mat to a black/empty image the size of the camera resolution.
     m_cvFrame = cv::Mat::zeros(nPropResolutionY, nPropResolutionX, CV_8UC4);
 
-    // Try to detect and find the video index of the camera matching the given serial number.
-    int nCameraIndex = this->FindCameraIndexBySerial(szCameraSerial);
-    LOG_INFO(logging::g_qSharedLogger, "Camera with serial number {} found at video index {}", szCameraSerial, nCameraIndex);
-
     // Set video cvCamera properties.
     m_cvCamera.set(cv::CAP_PROP_FRAME_WIDTH, nPropResolutionX);
     m_cvCamera.set(cv::CAP_PROP_FRAME_HEIGHT, nPropResolutionY);
     m_cvCamera.set(cv::CAP_PROP_FPS, nPropFramesPerSecond);
 
     // Attempt to open camera with OpenCV's VideoCapture and print if successfully opened or not.
-    if (m_cvCamera.open(nCameraIndex))
+    if (m_cvCamera.open(szCameraSerial))
     {
         // Submit logger message.
-        LOG_INFO(logging::g_qSharedLogger, "Camera {} with serial number {} has been successfully opened.", m_cvCamera.getBackendName(), szCameraSerial);
+        LOG_INFO(logging::g_qSharedLogger, "Camera {} at {} has been successfully opened.", m_cvCamera.getBackendName(), szCameraSerial);
     }
     else
     {
         // Submit logger message.
-        LOG_ERROR(logging::g_qSharedLogger, "Unable to open camera with serial number {}", szCameraSerial);
+        LOG_ERROR(logging::g_qSharedLogger, "Unable to open camera at {}", szCameraSerial);
     }
 
     // Check if recording is enabled.
@@ -139,17 +135,8 @@ BasicCam::~BasicCam()
     // Release camera capture object.
     m_cvCamera.release();
 
-    // Check if camera was connected on a video index.
-    if (m_bCameraIsConnectedOnVideoIndex)
-    {
-        // Submit logger message.
-        LOG_INFO(logging::g_qSharedLogger, "Basic camera at video index {} has been successfully closed.", m_nCameraIndex);
-    }
-    else
-    {
-        // Submit logger message.
-        LOG_INFO(logging::g_qSharedLogger, "Basic camera at path/URL {} has been successfully closed.", m_szCameraPath);
-    }
+    // Submit logger message.
+    LOG_INFO(logging::g_qSharedLogger, "Basic camera at path/URL {} has been successfully closed.", m_szCameraPath);
 }
 
 /******************************************************************************
@@ -354,156 +341,16 @@ bool BasicCam::GetCameraIsOpen()
  ******************************************************************************/
 std::string BasicCam::GetCameraLocation() const
 {
-    // Check if camera location is a hardware path or video index.
-    if (m_bCameraIsConnectedOnVideoIndex)
+    // If video path, return path string.
+    // If the camera path is a file path, only return the last part of the path for easier identification. (file name)
+    size_t lastSlashPos = m_szCameraPath.find_last_of("/\\");
+    if (lastSlashPos != std::string::npos)
     {
-        // If video index, return index integer.
-        return std::to_string(m_nCameraIndex);
+        return m_szCameraPath.substr(lastSlashPos + 1);
     }
     else
     {
-        // If video path, return path string.
-        return m_szCameraPath;
+        // Otherwise return a string with a random number.
+        return "video_index_" + std::to_string(rand() % 1000);
     }
-}
-
-/******************************************************************************
- * @brief
- *
- * @param szCameraSerial -
- * @return int -
- *
- * @author clayjay3 (claytonraycowen@gmail.com)
- * @date 2025-11-23
- ******************************************************************************/
-int BasicCam::FindCameraIndexBySerial(const std::string& szCameraSerial)
-{
-    int nCameraIndex = -1;
-
-#ifdef _WIN32
-    // ---------------------------------------------------------
-    // WINDOWS IMPLEMENTATION (DirectShow)
-    // ---------------------------------------------------------
-    HRESULT hr;
-    ICreateDevEnum* pSysDevEnum = NULL;
-
-    // Initialize COM library
-    CoInitialize(NULL);
-
-    hr = CoCreateInstance(CLSID_SystemDeviceEnum, NULL, CLSCTX_INPROC_SERVER, IID_ICreateDevEnum, (void**) &pSysDevEnum);
-
-    if (SUCCEEDED(hr))
-    {
-        IEnumMoniker* pEnumCat = NULL;
-        hr                     = pSysDevEnum->CreateClassEnumerator(CLSID_VideoInputDeviceCategory, &pEnumCat, 0);
-
-        if (hr == S_OK)
-        {
-            IMoniker* pMoniker = NULL;
-            ULONG cFetched;
-            int index = 0;    // This index matches the order OpenCV uses for CAP_DSHOW
-
-            while (pEnumCat->Next(1, &pMoniker, &cFetched) == S_OK)
-            {
-                IPropertyBag* pPropBag;
-                hr = pMoniker->BindToStorage(0, 0, IID_IPropertyBag, (void**) &pPropBag);
-
-                if (SUCCEEDED(hr))
-                {
-                    VARIANT var;
-                    VariantInit(&var);
-
-                    // Read the "DevicePath" which contains the Hardware ID / Serial
-                    // Format is typically: \\?\usb#vid_xxxx&pid_yyyy#<SERIAL>#{guid}
-                    hr = pPropBag->Read(L"DevicePath", &var, 0);
-                    if (SUCCEEDED(hr))
-                    {
-                        // Convert BSTR (Wide) to std::string (UTF-8)
-                        int count = WideCharToMultiByte(CP_UTF8, 0, var.bstrVal, -1, NULL, 0, NULL, NULL);
-                        std::string devicePath(count, 0);
-                        WideCharToMultiByte(CP_UTF8, 0, var.bstrVal, -1, &devicePath[0], count, NULL, NULL);
-                        if (!devicePath.empty() && devicePath.back() == '\0')
-                            devicePath.pop_back();
-
-                        // Parse the Serial from the Path
-                        // We look for the string between the last two '#' characters before the GUID
-                        size_t lastHash       = devicePath.rfind('#');
-                        size_t secondLastHash = (lastHash != std::string::npos) ? devicePath.rfind('#', lastHash - 1) : std::string::npos;
-
-                        if (lastHash != std::string::npos && secondLastHash != std::string::npos)
-                        {
-                            std::string szCurrentSerial = devicePath.substr(secondLastHash + 1, lastHash - secondLastHash - 1);
-
-                            // Case-insensitive comparison
-                            if (_stricmp(szCurrentSerial.c_str(), szCameraSerial.c_str()) == 0)
-                            {
-                                nCameraIndex = index;
-                            }
-                        }
-                    }
-                    VariantClear(&var);
-                    pPropBag->Release();
-                }
-                pMoniker->Release();
-                if (nCameraIndex != -1)
-                    break;    // Found it
-                index++;
-            }
-            pEnumCat->Release();
-        }
-        pSysDevEnum->Release();
-    }
-    CoUninitialize();
-
-    if (nCameraIndex != -1)
-    {
-        LOG_NOTICE(logging::g_qSharedLogger, "[Windows] Found camera at index: {}", nCameraIndex);
-    }
-
-#else
-    // ---------------------------------------------------------
-    // LINUX IMPLEMENTATION (SysFS / V4L2)
-    // ---------------------------------------------------------
-    DIR* stdDIR = opendir("/sys/class/video4linux");
-    if (stdDIR)
-    {
-        struct dirent* ent;
-        while ((ent = readdir(stdDIR)) != NULL)
-        {
-            std::string szName = ent->d_name;    // e.g., "video0"
-            if (szName.find("video") == 0)
-            {
-                // Path to serial: /sys/class/video4linux/videoN/device/serial
-                // Note: "device" is a symlink to the actual USB device directory.
-                std::string szSerialPath = "/sys/class/video4linux/" + szName + "/device/serial";
-                std::ifstream stdSerialFile(szSerialPath);
-
-                if (stdSerialFile.is_open())
-                {
-                    std::string szCurrentSerial;
-                    if (std::getline(stdSerialFile, szCurrentSerial))
-                    {
-                        // Remove potential trailing newlines/whitespace
-                        szCurrentSerial.erase(szCurrentSerial.find_last_not_of(" \n\r\t") + 1);
-
-                        if (szCurrentSerial == szCameraSerial)
-                        {
-                            std::string szIndex = szName.substr(5);    // Strip "video" to get "0".
-                            nCameraIndex        = std::stoi(szIndex);
-                            break;
-                        }
-                    }
-                }
-            }
-        }
-        closedir(stdDIR);
-    }
-
-    if (nCameraIndex != -1)
-    {
-        LOG_NOTICE(logging::g_qSharedLogger, "[Linux] Found camera at index: {}", nCameraIndex);
-    }
-#endif
-
-    return nCameraIndex;
 }
