@@ -9,6 +9,12 @@
  ******************************************************************************/
 
 #include "./Logging.h"
+#include "vision/algorithms/CameraCalibration.hpp"
+#include "vision/algorithms/ComponentDetector.hpp"
+#include "vision/algorithms/FicucialDetector.hpp"
+#include "vision/algorithms/PixelTo3D.hpp"
+#include "vision/algorithms/PlacementVerifier.hpp"
+#include "vision/algorithms/VisualHoming.hpp"
 #include "vision/cameras/BasicCam.h"
 
 /// \cond

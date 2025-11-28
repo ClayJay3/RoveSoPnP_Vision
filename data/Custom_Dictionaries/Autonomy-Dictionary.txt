@@ -58,6 +58,7 @@ qrcode
 Reprojection
 RESOLUTIONX
 RESOLUTIONY
+Rodrigues
 ROVECOMM
 Rvecs
 Shafe
