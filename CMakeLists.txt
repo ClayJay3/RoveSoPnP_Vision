@@ -1,6 +1,6 @@
 ####################################################################################################################
-##                                                   RoveSoPNP                                                    ##
-##                                               24.05.00 - Build 001                                             ##
+##                                               RoveSoPNP Vision                                                 ##
+##                                               24.05.00 - Build 002                                             ##
 ##                                               RoveSoSeniorDesign                                               ##
 ##                                      Copyright 2025 - All Rights Reserved                                      ##
 ####################################################################################################################
@@ -11,12 +11,9 @@ cmake_minimum_required(VERSION 3.24.3)
 ## C++ and CUDA Version
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++20")
 
 ## Project Name and Version
-project(RoveSoPNP VERSION 24.05.00 LANGUAGES C CXX)
-## CMake Policies
-set(CMAKE_SUPPRESS_DEVELOPER_WARNINGS 1 CACHE INTERNAL "Suppress developer warnings")
+project(RoveSoPNP_Vision VERSION 24.05.00 LANGUAGES C CXX)
 
 ####################################################################################################################
 ##                                                    Options                                                     ##
@@ -28,27 +25,11 @@ option(BUILD_VERBOSE_MODE "Enable Verbose Makefile" OFF)
 ## Enable or Disable Printing All CMake Variables
 option(LIST_ALL_VARS "Print all CMake Variables" OFF)
 
-####################################################################################################################
-##                                         Configuration Based on Options                                         ##
-####################################################################################################################
+## Enable building the standalone executable (for testing vision independently)
+option(BUILD_STANDALONE "Build the standalone runner executable (main.cpp)" ON)
 
-message("-- Autonomy System Options:")
-
-## Verbose Makefile
-if (BUILD_VERBOSE_MODE)
-    message("--   [x]: Verbose Makefile: Enabled")
-    set(CMAKE_VERBOSE_MAKEFILE TRUE CACHE BOOL "Verbose output" FORCE)
-else()
-    message("--   [ ]: Verbose Makefile: Disabled")
-endif()
-
-## Print All CMake Variables
-if (LIST_ALL_VARS)
-    message("--   [x]: Print All CMake Variables: Enabled")
-    
-else()
-    message("--   [ ]: Print All CMake Variables: Disabled")
-endif()
+message("-- Autonomy Vision System Configuration:")
+message("--   [INFO] Build Standalone Runner: ${BUILD_STANDALONE}")
 
 ####################################################################################################################
 ##                                           Dependencies and Libraries                                           ##
@@ -77,7 +58,71 @@ find_package(Eigen3 3.3 REQUIRED NO_MODULE)
 ## Find OpenCV.
 find_package(OpenCV REQUIRED)
 
-## Check if all variables should be listed.
+####################################################################################################################
+##                                                Build Library                                                   ##
+####################################################################################################################
+
+## 1. Gather Source Files (Exclude main.cpp for the library)
+file(GLOB_RECURSE LIB_SRC CONFIGURE_DEPENDS "src/*.cpp")
+list(FILTER LIB_SRC EXCLUDE REGEX "src/main.cpp$")
+
+## 2. Define the Library Target
+# We do not specify STATIC or SHARED to allow the parent project to decide via BUILD_SHARED_LIBS.
+add_library(RoveVision ${LIB_SRC})
+
+## 3. Setup Include Directories
+# PUBLIC means both this library AND projects linking to it can see these folders.
+target_include_directories(RoveVision PUBLIC 
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/src>
+    $<INSTALL_INTERFACE:include>
+)
+
+## 4. Link Dependencies
+# PUBLIC means projects linking RoveVision will also inherit these links.
+target_link_libraries(RoveVision PUBLIC
+    Threads::Threads
+    Eigen3::Eigen
+    Python3::Python
+    quill::quill
+    nlohmann_json::nlohmann_json
+    ${OpenCV_LIBS}
+)
+
+## 5. Compile Options
+if (MSVC)
+    target_compile_options(RoveVision PRIVATE /W4 /WX)
+else()
+    target_compile_options(RoveVision PRIVATE -Wall -Wextra -Wpedantic)
+endif()
+
+####################################################################################################################
+##                                           Build Standalone Runner                                              ##
+####################################################################################################################
+
+if (BUILD_STANDALONE)
+    # Define the executable.
+    set(EXE_NAME "RoveVisionRunner")
+    add_executable(${EXE_NAME} src/main.cpp)
+
+    # Link against our new library.
+    target_link_libraries(${EXE_NAME} PRIVATE RoveVision)
+    
+    # Ensure it finds the headers.
+    target_include_directories(${EXE_NAME} PRIVATE src)
+
+    if (MSVC)
+        target_compile_options(${EXE_NAME} PRIVATE /W4 /WX)
+    else()
+        target_compile_options(${EXE_NAME} PRIVATE -Wall -Wextra -Wpedantic)
+    endif()
+
+    message("--   [INFO] Vision Runner Executable: ${EXE_NAME}")
+endif()
+
+####################################################################################################################
+##                                              Final Configuration                                               ##
+####################################################################################################################
+
 if (LIST_ALL_VARS)
     get_cmake_property(_variableNames VARIABLES)
     list (SORT _variableNames)
@@ -85,38 +130,3 @@ if (LIST_ALL_VARS)
         message(STATUS "${_variableName}=${${_variableName}}")
     endforeach()
 endif()
-
-####################################################################################################################
-##                                                Build Executable                                                ##
-####################################################################################################################
-
-## Search Project Directories for CPP Files
-file(GLOB_RECURSE SRC           CONFIGURE_DEPENDS  "src/*.cpp")
-set(EXE_NAME "${PROJECT_NAME}")
-add_executable(${EXE_NAME} ${SRC})
-
-## Compile Options
-if (MSVC)
-    target_compile_options(${EXE_NAME} PRIVATE /W4 /WX)
-else()
-    target_compile_options(${EXE_NAME} PRIVATE -Wall -Wextra -Wpedantic)
-endif()
-
-## Link Libraries
-set(AUTONOMY_LIBRARIES  Threads::Threads
-                        Eigen3::Eigen
-                        Python3::Python
-                        quill::quill
-                        nlohmann_json::nlohmann_json
-                        ${OpenCV_LIBS}
-)
-
-target_link_libraries(${EXE_NAME} PRIVATE ${AUTONOMY_LIBRARIES})
-
-####################################################################################################################
-##                                           Final Build Configuration                                            ##
-####################################################################################################################
-
-message("-- Final RoveSoPNP Configuration Summary")
-message("--   Executable Name: ${EXE_NAME}")
-message("--   Verbose Makefile: ${BUILD_VERBOSE_MODE}")
