@@ -2,7 +2,7 @@
  * @brief Main program file. Sets up classes and runs main program functions.
  *
  * @file main.cpp
- * @author Eli Byrd (edbgkk@mst.edu), ClayJay3 (claytonraycowen@gmail.com)
+ * @author ClayJay3 (claytonraycowen@gmail.com)
  * @date 2025-06-20
  *
  * @copyright Copyright RoveSoSeniorDesign 2025 - All Rights Reserved
@@ -107,11 +107,11 @@ int CheckKeyPress()
 }
 
 /******************************************************************************
- * @brief Autonomy main function.
+ * @brief  main function.
  *
  * @return int - Exit status number.
  *
- * @author Eli Byrd (edbgkk@mst.edu), ClayJay3 (claytonraycowen@gmail.com)
+ * @author ClayJay3 (claytonraycowen@gmail.com)
  * @date 2025-06-20
  ******************************************************************************/
 int main()

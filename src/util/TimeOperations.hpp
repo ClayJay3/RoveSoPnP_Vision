@@ -3,7 +3,7 @@
  *        date within the timeops namespace.
  *
  * @file TimeOperations.hpp
- * @author Eli Byrd (edbgkk@mst.edu)
+ * @author ClayJay3 (claytonraycowen@gmail.com)
  * @date 2025-01-07
  *
  * @copyright Copyright RoveSoSeniorDesign 2025 - All Rights Reserved
@@ -25,7 +25,7 @@
  * @brief Namespace containing functions related to operations on time and
  *        date related data types.
  *
- * @author Eli Byrd (edbgkk@mst.edu)
+ * @author ClayJay3 (claytonraycowen@gmail.com)
  * @date 2025-01-07
  ******************************************************************************/
 namespace timeops
@@ -36,7 +36,7 @@ namespace timeops
      * @param szFormat - The format to return the time in.
      * @return std::string - The current time in the specified format.
      *
-     * @author Eli Byrd (edbgkk@mst.edu)
+     * @author ClayJay3 (claytonraycowen@gmail.com)
      * @date 2025-01-07
      ******************************************************************************/
     inline std::string GetTimestamp(const std::string& szFormat = "%Y%m%d-%H%M%S")

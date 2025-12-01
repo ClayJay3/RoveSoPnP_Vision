@@ -1,8 +1,8 @@
 /******************************************************************************
  * @brief Sets up functions and classes used by logging project wide.
  *
- * @file AutonomyLogging.cpp
- * @author Eli Byrd (edbgkk@mst.edu), ClayJay3 (claytonraycowen@gmail.com)
+ * @file Logging.cpp
+ * @author ClayJay3 (claytonraycowen@gmail.com)
  * @date 2025-10-18
  *
  * @copyright Copyright RoveSoSeniorDesign 2025 - All Rights Reserved
@@ -48,7 +48,7 @@ namespace logging
      * @param szLoggingOutputPath - A string containing the filepath to output log files to.
      *                      Must be properly formatted.
      *
-     * @author Eli Byrd (edbgkk@mst.edu)
+     * @author ClayJay3 (claytonraycowen@gmail.com)
      * @date 2025-08-22
      ******************************************************************************/
     void InitializeLoggers(std::string szLoggingOutputPath, std::string szProgramTimeLogsDir)
@@ -197,7 +197,7 @@ namespace logging
      * @attention This method overrides the base class's write_log function to
      * inject custom formatting logic while preserving the core file logging functionality.
      *
-     * @author Eli Byrd (edbgkk@mst.edu)
+     * @author ClayJay3 (claytonraycowen@gmail.com)
      * @date 2025-08-16
      ******************************************************************************/
     void MRDTConsoleSink::write_log(quill::MacroMetadata const* qLogMetadata,
@@ -279,7 +279,7 @@ namespace logging
      * @attention This method overrides the base class's write_log function to
      * inject custom formatting logic while preserving the core file logging functionality.
      *
-     * @author Eli Byrd (edbgkk@mst.edu)
+     * @author ClayJay3 (claytonraycowen@gmail.com)
      * @date 2025-08-16
      ******************************************************************************/
     void MRDTRotatingFileSink::write_log(const quill::MacroMetadata* qLogMetadata,

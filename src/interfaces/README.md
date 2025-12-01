@@ -17,7 +17,7 @@ Here's a general guideline for organizing files within the **Interfaces** direct
 - Ensure that the files are properly documented with comments explaining the contract, expected behavior, and any relevant details.
 - Think hard about what common methods you want to define and the different ways they could be used across the codebase. (maximize reusability)
 
-For example, if there is an abstract class defining the common behavior for threads in the **Threads** directory, create a file named `AutonomyThread.h` within the **interfaces** directory. Similarly, if there is an interface defining the contract for state classes, name the file as `State.h`.
+For example, if there is an abstract class defining the common behavior for threads in the **Threads** directory, create a file named `Thread.h` within the **interfaces** directory. Similarly, if there is an interface defining the contract for state classes, name the file as `State.h`.
 
 Make sure to update this README file whenever new interface or abstract class files are added to the **Interfaces** directory, providing a brief summary of each interface's purpose and the classes that inherit from it.
 

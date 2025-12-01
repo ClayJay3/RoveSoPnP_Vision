@@ -11,8 +11,8 @@
 #ifndef BASICCAM_H
 #define BASICCAM_H
 
-#include "../../interfaces/AutonomyThread.hpp"
 #include "../../interfaces/BasicCamera.hpp"
+#include "../../interfaces/Thread.hpp"
 
 /// \cond
 #include <opencv2/opencv.hpp>

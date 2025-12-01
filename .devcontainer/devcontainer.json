@@ -277,8 +277,8 @@
                 // Spell Checker Extension Settings.
                 "cSpell.customDictionaries": {
                     "project-words": {
-                        "name": "Autonomy-Project-Words",
-                        "path": "${workspaceRoot}/data/Custom_Dictionaries/Autonomy-Dictionary.txt",
+                        "name": "-Project-Words",
+                        "path": "${workspaceRoot}/data/Custom_Dictionaries/-Dictionary.txt",
                         "description": "Words used in the RoveSoPNP project",
                         "addWords": true
                     },

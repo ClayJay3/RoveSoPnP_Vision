@@ -8,8 +8,8 @@
  * @copyright Copyright RoveSoSeniorDesign 2025 - All Rights Reserved
  ******************************************************************************/
 
-#ifndef AUTONOMY_CONSTANTS_H
-#define AUTONOMY_CONSTANTS_H
+#ifndef _CONSTANTS_H
+#define _CONSTANTS_H
 
 #include "./interfaces/Camera.hpp"
 
@@ -21,7 +21,7 @@
 
 /******************************************************************************
  * @brief Namespace containing all constants for RoveSoPNP. Including
- *      AutonomyGlobals.h will also include this namespace.
+ *      Globals.h will also include this namespace.
  *
  *
  * @author ClayJay3 (claytonraycowen@gmail.com)
@@ -89,4 +89,4 @@ namespace constants
     ///////////////////////////////////////////////////////////////////////////
 }    // namespace constants
 
-#endif    // AUTONOMY_CONSTANTS_H
+#endif    // _CONSTANTS_H

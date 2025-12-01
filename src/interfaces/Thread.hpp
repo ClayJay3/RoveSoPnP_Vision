@@ -4,15 +4,15 @@
  *      and others are pure virtual methods that need to be implemented by the
  *      inheritor.
  *
- * @file AutonomyThread.h
+ * @file Thread.h
  * @author ClayJay3 (claytonraycowen@gmail.com)
  * @date 2025-07-16
  *
  * @copyright Copyright RoveSoSeniorDesign 2025 - All Rights Reserved
  ******************************************************************************/
 
-#ifndef AUTONOMYTHREAD_H
-#define AUTONOMYTHREAD_H
+#ifndef THREAD_H
+#define THREAD_H
 
 #include "../util/IPS.hpp"
 
@@ -34,7 +34,7 @@
  * @date 2025-07-27
  ******************************************************************************/
 template<class T>
-class AutonomyThread
+class Thread
 {
     public:
         /////////////////////////////////////////
@@ -42,7 +42,7 @@ class AutonomyThread
         /////////////////////////////////////////
 
         // Define an enum for storing this classes state.
-        enum class AutonomyThreadState
+        enum class ThreadState
         {
             eStarting,
             eRunning,
@@ -54,22 +54,22 @@ class AutonomyThread
         // Declare and define public class methods.
         /////////////////////////////////////////
         /******************************************************************************
-         * @brief Construct a new Autonomy Thread object.
+         * @brief Construct a new  Thread object.
          *
          *
          * @author clayjay3 (claytonraycowen@gmail.com)
          * @date 2025-12-30
          ******************************************************************************/
-        AutonomyThread()
+        Thread()
         {
             // Initialize member variables.
             m_bStopThreads                     = false;
-            m_eThreadState                     = AutonomyThreadState::eStopped;
+            m_eThreadState                     = ThreadState::eStopped;
             m_nMainThreadMaxIterationPerSecond = 0;
         }
 
         /******************************************************************************
-         * @brief Destroy the Autonomy Thread object. If the parent object or main thread
+         * @brief Destroy the  Thread object. If the parent object or main thread
          *      is destroyed or exited while this thread is still running, a race condition
          *      will occur. Stopping and joining the thread here insures that the main
          *      program can't exit if the user forgot to stop and join the thread.
@@ -78,12 +78,12 @@ class AutonomyThread
          * @author ClayJay3 (claytonraycowen@gmail.com)
          * @date 2025-07-23
          ******************************************************************************/
-        virtual ~AutonomyThread()
+        virtual ~Thread()
         {
             // Tell all threads to stop executing user code.
             m_bStopThreads = true;
             // Update thread state.
-            m_eThreadState = AutonomyThreadState::eStopping;
+            m_eThreadState = ThreadState::eStopping;
 
             // Pause and clear pool queues.
             m_thPool.pause();
@@ -95,7 +95,7 @@ class AutonomyThread
             m_thPool.wait();
             m_thMainThread.wait();
             // Update thread state.
-            m_eThreadState = AutonomyThreadState::eStopped;
+            m_eThreadState = ThreadState::eStopped;
         }
 
         /******************************************************************************
@@ -119,7 +119,7 @@ class AutonomyThread
             // Tell any open thread to stop.
             m_bStopThreads = true;
             // Update thread state.
-            m_eThreadState = AutonomyThreadState::eStopping;
+            m_eThreadState = ThreadState::eStopping;
 
             // Pause queuing of new tasks to the threads, then purge them.
             m_thPool.pause();
@@ -131,7 +131,7 @@ class AutonomyThread
             this->Join();
 
             // Update thread state.
-            m_eThreadState = AutonomyThreadState::eStarting;
+            m_eThreadState = ThreadState::eStarting;
             // Clear results vector.
             m_vPoolReturns.clear();
             // Reset thread stop toggle.
@@ -147,8 +147,7 @@ class AutonomyThread
             // Block until thread is started or currently stopping if thread start failed.
             std::unique_lock<std::mutex> lkStartLock(m_muThreadRunningConditionMutex);
             m_cdThreadRunningCondition.wait(lkStartLock,
-                                            [this]
-                                            { return this->m_eThreadState == AutonomyThreadState::eRunning || this->m_eThreadState == AutonomyThreadState::eStopping; });
+                                            [this] { return this->m_eThreadState == ThreadState::eRunning || this->m_eThreadState == ThreadState::eStopping; });
         }
 
         /******************************************************************************
@@ -166,7 +165,7 @@ class AutonomyThread
             // Signal for any open threads to stop executing,
             m_bStopThreads = true;
             // Update thread state.
-            m_eThreadState = AutonomyThreadState::eStopping;
+            m_eThreadState = ThreadState::eStopping;
         }
 
         /******************************************************************************
@@ -185,7 +184,7 @@ class AutonomyThread
             m_thMainThread.wait();
 
             // Update thread state.
-            m_eThreadState = AutonomyThreadState::eStopped;
+            m_eThreadState = ThreadState::eStopped;
         }
 
         /******************************************************************************
@@ -206,12 +205,12 @@ class AutonomyThread
         /******************************************************************************
          * @brief Accessor for the Threads State private member.
          *
-         * @return AutonomyThreadState - The current state of the main thread.
+         * @return ThreadState - The current state of the main thread.
          *
          * @author clayjay3 (claytonraycowen@gmail.com)
          * @date 2025-01-08
          ******************************************************************************/
-        AutonomyThreadState GetThreadState() const { return m_eThreadState; }
+        ThreadState GetThreadState() const { return m_eThreadState; }
 
         /******************************************************************************
          * @brief Accessor for the Frame I P S private member.
@@ -543,7 +542,7 @@ class AutonomyThread
         BS::thread_pool m_thPool       = BS::thread_pool(2);
         std::vector<std::future<T>> m_vPoolReturns;
         std::atomic_bool m_bStopThreads;
-        std::atomic<AutonomyThreadState> m_eThreadState;
+        std::atomic<ThreadState> m_eThreadState;
         std::mutex m_muThreadRunningConditionMutex;
         std::condition_variable m_cdThreadRunningCondition;
         int m_nMainThreadMaxIterationPerSecond;
@@ -604,10 +603,10 @@ class AutonomyThread
                 }
 
                 // Check if thread state needs to be updated.
-                if (m_eThreadState != AutonomyThreadState::eRunning && m_eThreadState != AutonomyThreadState::eStopping)
+                if (m_eThreadState != ThreadState::eRunning && m_eThreadState != ThreadState::eStopping)
                 {
                     // Update thread state to running.
-                    m_eThreadState = AutonomyThreadState::eRunning;
+                    m_eThreadState = ThreadState::eRunning;
                     // Notify waiting start method that thread is now running.
                     m_cdThreadRunningCondition.notify_all();
                 }

@@ -157,7 +157,7 @@ void BasicCam::ThreadedContinuousCode()
     if (!m_cvCamera.isOpened())
     {
         // If this is the first iteration of the thread the camera probably isn't present so stop thread to save resources.
-        if (this->GetThreadState() == AutonomyThreadState::eStarting)
+        if (this->GetThreadState() == ThreadState::eStarting)
         {
             // Shutdown threads for this BasicCam.
             this->RequestStop();
@@ -328,7 +328,7 @@ std::future<bool> BasicCam::RequestFrameCopy(cv::Mat& cvFrame)
 bool BasicCam::GetCameraIsOpen()
 {
     // Get camera status from OpenCV.
-    return this->GetThreadState() == AutonomyThreadState::eRunning && m_cvCamera.isOpened();
+    return this->GetThreadState() == ThreadState::eRunning && m_cvCamera.isOpened();
 }
 
 /******************************************************************************

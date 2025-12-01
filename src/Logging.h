@@ -1,14 +1,14 @@
 /******************************************************************************
- * @brief Implements Logging for Autonomy
+ * @brief Implements Logging for
  *
- *        Note: Functions and Variables are defined in AutonomyGlobals.cpp
+ *        Note: Functions and Variables are defined in Globals.cpp
  *              by having the declarations occur in a separate header we are
  *              more easily able to use the functionality of the logger in
  *              areas of the program that would normally be unaccessible
  *              due to it being included in the Main Globals Header.
  *
  * @file Logging.h
- * @author Eli Byrd (edbgkk@mst.edu)
+ * @author ClayJay3 (claytonraycowen@gmail.com)
  * @date 2025-08-22
  *
  * @copyright Copyright RoveSoSeniorDesign 2025 - All Rights Reserved
@@ -36,8 +36,8 @@
 #include "./Constants.h"
 #include "./util/TimeOperations.hpp"
 
-#ifndef AUTONOMY_LOGGING_H
-#define AUTONOMY_LOGGING_H
+#ifndef _LOGGING_H
+#define _LOGGING_H
 
 /******************************************************************************
  * @brief Logging Levels:
@@ -47,7 +47,7 @@
  *        Level 2  > TRACE_L2  > Unused
  *        Level 3  > TRACE_L1  > Unused
  *        Level 4  > DEBUG     > Details that would only be useful in a debug environment
- *        Level 5  > INFO      > State Changes, RoveComm Updates GPS/IMU/Autonomy, etc
+ *        Level 5  > INFO      > State Changes, RoveComm Updates GPS/IMU/, etc
  *        Level 6  > WARNING   > Something unexpected happened - application could potentially error soon.
  *        Level 7  > ERROR     > Something went wrong - application could potentially have critical error soon.
  *        Level 8  > CRITICAL  > Something went very wrong - application will exit after logging is sent.
@@ -61,7 +61,7 @@
  *                 When DEBUG is set, we only receive: DEBUG, INFO, WARNING, ERROR, CRITICAL
  *
  *
- * @author Eli Byrd (edbgkk@mst.edu)
+ * @author ClayJay3 (claytonraycowen@gmail.com)
  * @date 2025-08-22
  ******************************************************************************/
 namespace logging
@@ -193,7 +193,7 @@ namespace logging
      * @see quill::ConsoleSink
      * @see quill::PatternFormatter
      *
-     * @author Eli Byrd (edbgkk@mst.edu)
+     * @author ClayJay3 (claytonraycowen@gmail.com)
      * @date 2025-08-16
      ******************************************************************************/
     class MRDTConsoleSink : public quill::ConsoleSink
@@ -221,7 +221,7 @@ namespace logging
              * @see quill::ConsoleSinkConfig
              * @see quill::PatternFormatter
              *
-             * @author Eli Byrd (edbgkk@mst.edu)
+             * @author ClayJay3 (claytonraycowen@gmail.com)
              * @date 2025-08-16
              ******************************************************************************/
             MRDTConsoleSink(const quill::ConsoleSinkConfig::Colours& qColors,                   // Custom Colors Import
@@ -287,7 +287,7 @@ namespace logging
      * @see quill::RotatingFileSink
      * @see quill::PatternFormatter
      *
-     * @author Eli Byrd (edbgkk@mst.edu)
+     * @author ClayJay3 (claytonraycowen@gmail.com)
      * @date 2025-08-16
      ******************************************************************************/
     class MRDTRotatingFileSink : public quill::RotatingFileSink
@@ -315,7 +315,7 @@ namespace logging
              * @see quill::RotatingFileSink
              * @see quill::PatternFormatter
              *
-             * @author Eli Byrd (edbgkk@mst.edu)
+             * @author ClayJay3 (claytonraycowen@gmail.com)
              * @date 2025-08-16
              ******************************************************************************/
             MRDTRotatingFileSink(const quill::fs::path& qFilename,                                               // File Path
@@ -346,4 +346,4 @@ namespace logging
             quill::PatternFormatter qFormatter;
     };
 }    // namespace logging
-#endif    // AUTONOMY_LOGGING_H
+#endif    // _LOGGING_H

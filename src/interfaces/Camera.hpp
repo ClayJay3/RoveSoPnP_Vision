@@ -12,7 +12,7 @@
 #define CAMERA_HPP
 
 #include "../util/vision/FetchContainers.hpp"
-#include "./AutonomyThread.hpp"
+#include "./Thread.hpp"
 
 /// \cond
 #include <atomic>
@@ -30,7 +30,7 @@
  * @date 2025-08-17
  ******************************************************************************/
 template<class T>
-class Camera : public AutonomyThread<void>
+class Camera : public Thread<void>
 {
     public:
         // Declare public methods and member variables.

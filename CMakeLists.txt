@@ -28,7 +28,7 @@ option(LIST_ALL_VARS "Print all CMake Variables" OFF)
 ## Enable building the standalone executable (for testing vision independently)
 option(BUILD_STANDALONE "Build the standalone runner executable (main.cpp)" ON)
 
-message("-- Autonomy Vision System Configuration:")
+message("--  Vision System Configuration:")
 message("--   [INFO] Build Standalone Runner: ${BUILD_STANDALONE}")
 
 ####################################################################################################################
