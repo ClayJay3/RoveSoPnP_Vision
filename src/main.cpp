@@ -18,8 +18,10 @@
 #include "vision/cameras/BasicCam.h"
 
 /// \cond
+#include <iostream>
 #include <sys/ioctl.h>
 #include <termios.h>
+#include <vector>
 
 /// \endcond
 
@@ -30,7 +32,7 @@ struct termios g_stOriginalTermSettings;
 
 /******************************************************************************
  * @brief Help function given to the C++ csignal standard library to run when
- *      a CONTROL^C is given from the terminal.
+ * a CONTROL^C is given from the terminal.
  *
  * @param nSignal - Integer representing the interrupt value.
  *
@@ -151,6 +153,8 @@ int main()
 
     // Create a vector of ints to store the FPS values for each thread.
     std::vector<uint32_t> vThreadFPSValues;
+    // Vector to store frames for calibration.
+    std::vector<cv::Mat> vCalibrationImages;
 
     // Start the camera.
     pGantryCam->Start();
@@ -193,6 +197,8 @@ int main()
                     LOG_NOTICE(logging::g_qSharedLogger,
                                "\n--------[ RoveSoPNP Help ]--------\n"
                                "Press 'f' or 'F' to print FPS stats to the log file.\n"
+                               "Press 'c' or 'C' to capture a frame for calibration.\n"
+                               "Press 'x' or 'X' to execute calibration (interactive).\n"
                                "Press 'q' or 'Q' to quit the program.\n"
                                "-------------------------------------------\n");
                 }
@@ -204,6 +210,89 @@ int main()
                 {
                     LOG_INFO(logging::g_qSharedLogger, "'Q' key pressed. Initiating shutdown...");
                     bMainStop = true;
+                }
+                // Capture frame logic.
+                else if (chTerminalInput == 'c' || chTerminalInput == 'C')
+                {
+                    cv::Mat cvFrame;
+                    // Request a frame copy from the camera thread.
+                    std::future<bool> fResult = pGantryCam->RequestFrameCopy(cvFrame);
+
+                    // Wait for the frame to be copied.
+                    if (fResult.get())
+                    {
+                        // Display frame.
+                        cv::imshow("Calibration Frame", cvFrame);
+                        cv::waitKey(1000);
+                        // Store the frame.
+                        vCalibrationImages.push_back(cvFrame.clone());
+                        LOG_INFO(logging::g_qSharedLogger, "Captured calibration frame. Total images: {}", vCalibrationImages.size());
+                    }
+                    else
+                    {
+                        LOG_ERROR(logging::g_qSharedLogger, "Failed to capture frame from Gantry Camera.");
+                    }
+                }
+                // Execute calibration logic.
+                else if (chTerminalInput == 'x' || chTerminalInput == 'X')
+                {
+                    if (vCalibrationImages.empty())
+                    {
+                        LOG_WARNING(logging::g_qSharedLogger, "No images captured! Press 'c' to capture images first.");
+                    }
+                    else
+                    {
+                        // Temporarily reset terminal to canonical mode to allow standard user input.
+                        ResetTerminalMode();
+
+                        int nBoardWidth   = 9;
+                        int nBoardHeight  = 6;
+                        float fSquareSize = 25.0f;
+
+                        // Ask for Board Dimensions.
+                        std::cout << "\n--- Calibration Configuration ---\n";
+                        std::cout << "Enter Board Width (number of inner corners, e.g., 9): ";
+                        std::cin >> nBoardWidth;
+                        std::cout << "Enter Board Height (number of inner corners, e.g., 6): ";
+                        std::cin >> nBoardHeight;
+                        std::cout << "Enter Square Size in mm (e.g., 25.0): ";
+                        std::cin >> fSquareSize;
+
+                        // Ask if user wants fisheye or normal calibration.
+                        std::cout << "Select Calibration Model: (P)inhole or (F)isheye? ";
+                        char chModeInput;
+                        std::cin >> chModeInput;
+
+                        DistortionModel eModel = PINHOLE;
+                        if (chModeInput == 'f' || chModeInput == 'F')
+                        {
+                            eModel = FISHEYE;
+                            LOG_INFO(logging::g_qSharedLogger, "Selected FISHEYE model.");
+                        }
+                        else
+                        {
+                            LOG_INFO(logging::g_qSharedLogger, "Selected PINHOLE model.");
+                        }
+
+                        LOG_INFO(logging::g_qSharedLogger, "Starting Calibration on {} images with board {}x{}...", vCalibrationImages.size(), nBoardWidth, nBoardHeight);
+
+                        // Perform Calibration.
+                        cv::Size cvBoardSize(nBoardWidth, nBoardHeight);
+                        CameraConfig stResult = PixelTo3D::CalibrateCameraFromImages(vCalibrationImages, cvBoardSize, fSquareSize, eModel);
+
+                        // Print out the result calibration.
+                        std::cout << "\n========== Calibration Results ==========\n";
+                        std::cout << "Camera Matrix (K):\n" << stResult.cvK << "\n\n";
+                        std::cout << "Distortion Coefficients (D):\n" << stResult.cvD << "\n";
+                        std::cout << "=========================================\n" << std::endl;
+
+                        // Clear images after calibration.
+                        vCalibrationImages.clear();
+                        LOG_INFO(logging::g_qSharedLogger, "Calibration finished. Image buffer cleared.");
+
+                        // Return terminal to non-canonical mode for main loop execution.
+                        SetNonCanonicalTerminalMode();
+                    }
                 }
             }
         }

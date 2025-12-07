@@ -78,10 +78,9 @@ namespace constants
     const int GANTRYCAM_HORIZONTAL_FOV          = 110;     // The horizontal FOV of the camera. Useful for future calculations.
     const int GANTRYCAM_VERTICAL_FOV            = 70;      // The vertical FOV of the camera. Useful for future calculations.
     const int GANTRYCAM_FRAME_RETRIEVAL_THREADS = 5;       // The number of threads allocated to the threadpool for performing frame copies to other threads.
-    const std::string GANTRYCAM_SERIAL =
-        "/dev/v4l/by-id/usb-8SSC21C16294V1SR34S00CW_Integrated_Camera_200901010001-video-index0";    // The serial of the camera to open. You can get
-                                                                                                     // this by running: "lsusb -v | grep -i iSerial"
-    const PIXEL_FORMATS GANTRYCAM_PIXELTYPE = PIXEL_FORMATS::eBGR;                                   // The pixel layout of the camera.
+    const std::string GANTRYCAM_SERIAL = "/dev/v4l/by-id/usb-8MP_USB_Camera_8MP_USB_Camera_2022051301-video-index0";    // The serial of the camera to open. You can get
+                                                                                                                        // this by running: "lsusb -v | grep -i iSerial"
+    const PIXEL_FORMATS GANTRYCAM_PIXELTYPE = PIXEL_FORMATS::eBGR;                                                      // The pixel layout of the camera.
 
     ///////////////////////////////////////////////////////////////////////////
 }    // namespace constants
