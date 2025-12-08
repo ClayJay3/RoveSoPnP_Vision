@@ -13,6 +13,7 @@
 #define CAMERA_CALIBRATION_HPP
 
 #include "../../util/vision/CameraModels.hpp"
+#include <filesystem>
 #include <iostream>
 #include <opencv2/opencv.hpp>
 #include <vector>
@@ -72,6 +73,10 @@ namespace PixelTo3D
             return stResultConfig;
         }
 
+        // Create debug directory
+        std::string szDebugDir = "../vision_logs/calibration_debug/";
+        std::filesystem::create_directories(szDebugDir);
+
         // 1. Prepare Object Points (Real world 3D coords of corners).
         // These are constant for every image (assuming the board doesn't deform).
         std::vector<cv::Point3f> vSinglePatternObjPoints = GenerateObjectPoints(cvBoardSize, fSquareSize);
@@ -82,9 +87,12 @@ namespace PixelTo3D
         cv::Size cvImageSize = vCalibrationImages[0].size();
 
         // 2. Detect Corners in all images.
-        int nSuccessCount = 0;
+        int nSuccessCount   = 0;
+        int nTotalProcessed = 0;
+
         for (const auto& cvImage : vCalibrationImages)
         {
+            nTotalProcessed++;
             // Ensure images are the same size.
             if (cvImage.size() != cvImageSize)
             {
@@ -105,9 +113,18 @@ namespace PixelTo3D
 
             // Find corners.
             std::vector<cv::Point2f> vCorners;
-            // Use adaptive threshold + fast check + normalize image for robust detection.
-            int nFlags  = cv::CALIB_CB_ADAPTIVE_THRESH | cv::CALIB_CB_NORMALIZE_IMAGE | cv::CALIB_CB_FAST_CHECK;
+            // REMOVED CALIB_CB_FAST_CHECK because it can fail on fisheye lenses
+            int nFlags  = cv::CALIB_CB_ADAPTIVE_THRESH | cv::CALIB_CB_NORMALIZE_IMAGE;
             bool bFound = cv::findChessboardCorners(cvGray, cvBoardSize, vCorners, nFlags);
+
+            // Visual Debugging: Draw corners (or lack thereof)
+            cv::Mat cvDebugImg = cvImage.clone();
+            cv::drawChessboardCorners(cvDebugImg, cvBoardSize, vCorners, bFound);
+
+            // Construct filename: pass_01.jpg or fail_01.jpg
+            std::string szStatus   = bFound ? "pass" : "fail";
+            std::string szFilename = szDebugDir + szStatus + "_" + std::to_string(nTotalProcessed) + ".jpg";
+            cv::imwrite(szFilename, cvDebugImg);
 
             if (bFound)
             {
@@ -122,6 +139,7 @@ namespace PixelTo3D
         }
 
         std::cout << "[CameraCalibration] Successfully detected corners in " << nSuccessCount << " / " << vCalibrationImages.size() << " images." << std::endl;
+        std::cout << "[CameraCalibration] Debug images saved to " << szDebugDir << std::endl;
 
         if (nSuccessCount < 1)
         {
@@ -155,12 +173,7 @@ namespace PixelTo3D
             int nFisheyeFlags = cv::fisheye::CALIB_RECOMPUTE_EXTRINSIC | cv::fisheye::CALIB_CHECK_COND | cv::fisheye::CALIB_FIX_SKEW;
 
             // Fisheye Calibration.
-            // Note: objectPoints for fisheye often requires vector<vector<Point3d>> in older OpenCV,
-            // but modern OpenCV handles Point3f usually. We stick to 3f for consistency but convert if needed.
-            // However, cv::fisheye::calibrate signature expects InputArrayOfArrays.
-
-            // Need to strictly match type for some OpenCV versions (convert 3f -> 3d if compilation fails, but standard is flexible).
-            // For safety in strict environments, we ensure types match.
+            // Need to strictly match type for some OpenCV versions
             std::vector<std::vector<cv::Point3d>> vObjectPointsDouble;
             std::vector<std::vector<cv::Point2d>> vImagePointsDouble;
 
@@ -180,8 +193,17 @@ namespace PixelTo3D
                 vImagePointsDouble.push_back(dPts);
             }
 
-            dReprojectionError =
-                cv::fisheye::calibrate(vObjectPointsDouble, vImagePointsDouble, cvImageSize, stResultConfig.cvK, stResultConfig.cvD, vRvecs, vTvecs, nFisheyeFlags);
+            try
+            {
+                dReprojectionError =
+                    cv::fisheye::calibrate(vObjectPointsDouble, vImagePointsDouble, cvImageSize, stResultConfig.cvK, stResultConfig.cvD, vRvecs, vTvecs, nFisheyeFlags);
+            }
+            catch (const cv::Exception& e)
+            {
+                std::cerr << "[CameraCalibration] Error during Fisheye calibration: " << e.what() << std::endl;
+                std::cerr << "[CameraCalibration] Tip: Try capturing more images with diverse angles or checking board dimensions." << std::endl;
+                return stResultConfig;
+            }
         }
 
         std::cout << "[CameraCalibration] Calibration Complete. RMS Error: " << dReprojectionError << std::endl;
